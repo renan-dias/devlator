@@ -1,9 +1,32 @@
 import Image from "next/image";
+import TypingGreeting from "@/components/TypingGreeting";
+import ProjectQuiz from "@/components/ProjectQuiz";
+import { useState } from "react";
 
 export default function Home() {
+  const [quizDone, setQuizDone] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start w-full max-w-2xl">
+        <TypingGreeting />
+        {!quizDone ? (
+          <ProjectQuiz onFinish={(answers) => { setQuizDone(true); setQuizAnswers(answers); }} />
+        ) : (
+          <div className="w-full max-w-md mx-auto bg-white/10 dark:bg-black/20 rounded-2xl p-8 shadow-xl backdrop-blur border border-white/20 animate-fade-in">
+            <h2 className="text-xl font-bold mb-4">Respostas do Quiz</h2>
+            <ul className="space-y-2">
+              {quizAnswers && Object.entries(quizAnswers).map(([key, value]) => (
+                <li key={key} className="flex justify-between border-b border-white/10 pb-1">
+                  <span className="capitalize">{key}</span>
+                  <span className="font-semibold">{value}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 text-center text-sm text-gray-400">(Aqui será exibida a tabela de estimativas e opções para conversar com o Devinho)</div>
+          </div>
+        )}
         <Image
           className="dark:invert"
           src="/next.svg"
