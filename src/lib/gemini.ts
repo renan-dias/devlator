@@ -74,18 +74,12 @@ async function callGeminiAPI(prompt: string): Promise<string> {
   }
 }
 
-export interface ProjectData {
-  [key: string]: { value: string; label: string; multiplier: number; description?: string };
-}
-
 export async function generateProjectEstimate(projectData: ProjectData): Promise<{
   estimate: number;
   reasoning: string;
   suggestions: string[];
   marketValidation: string;
 }> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   // Criar descrição detalhada do projeto
   const projectDescription = Object.entries(projectData)
     .map(([key, value]) => `${key}: ${value.label}`)
@@ -133,9 +127,7 @@ SUGESTOES:
 `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = await callGeminiAPI(prompt);
 
     // Parse da resposta
     const estimateMatch = text.match(/ESTIMATIVA:\s*R\$\s*([\d.,]+)/);
@@ -156,7 +148,7 @@ SUGESTOES:
       : 'Valor compatível com a média praticada no mercado brasileiro. Projetos similares variam entre 70% a 130% deste valor dependendo da região e especialização da equipe.';
 
     const suggestions = sugestoesMatch
-      ? sugestoesMatch[1].split('\n').filter(s => s.trim().startsWith('-')).map(s => s.trim().substring(1).trim())
+      ? sugestoesMatch[1].split('\n').filter((s: string) => s.trim().startsWith('-')).map((s: string) => s.trim().substring(1).trim())
       : [
           'Divida o projeto em sprints/fases para facilitar pagamento e controle',
           'Utilize tecnologias consolidadas para reduzir riscos técnicos',
@@ -207,8 +199,6 @@ export async function chatWithDevinho(
   context: string[], 
   contextData?: any
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   let contextPrompt = '';
   let detailedContext = '';
   let specificInstructions = '';
@@ -332,9 +322,7 @@ ${specificInstructions}
 `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    return await callGeminiAPI(prompt);
   } catch (error) {
     console.error('Erro no chat:', error);
     return 'Desculpe, tive um problema técnico. Tente reformular sua pergunta ou entre em contato mais tarde.';
