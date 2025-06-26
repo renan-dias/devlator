@@ -213,8 +213,20 @@ export default function CalculadoraPage() {
     setIsCalculating(true);
     
     try {
-      const { generateProjectEstimate } = await import('@/lib/gemini');
-      const result = await generateProjectEstimate(finalAnswers as any);
+      // Usar API do servidor para proteger a chave
+      const response = await fetch('/api/estimate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(finalAnswers)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro na API');
+      }
+
+      const result = await response.json();
       setEstimate(result.estimate);
       setAiReasoning(result.reasoning);
       setAiSuggestions(result.suggestions);

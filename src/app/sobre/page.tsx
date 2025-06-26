@@ -29,11 +29,19 @@ export default function SobrePage() {
           <ul className="space-y-2 text-[#f8f8f2]">
             <li className="flex items-center gap-2">
               <span className="text-[#50fa7b]">→</span>
-              Questionário inteligente sobre tipo, complexidade e prazo do projeto
+              Quiz dinâmico que adapta perguntas baseado nas suas respostas
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#50fa7b]">→</span>
-              Análise baseada em IA para gerar estimativas precisas
+              Perguntas sobre tecnologia, infraestrutura e ambiente de produção
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[#50fa7b]">→</span>
+              IA analisa complexidade e gera estimativas com validação de mercado
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[#50fa7b]">→</span>
+              Exportação de contrato de serviço com todos os detalhes
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#50fa7b]">→</span>
@@ -47,10 +55,35 @@ export default function SobrePage() {
         </div>
 
         <div className="bg-[#282a36]/50 p-6 rounded-xl">
+          <h2 className="text-xl font-bold text-[#8be9fd] mb-3">Funcionalidades</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-[#f1fa8c] mb-2">Calculadora IA</h3>
+              <ul className="text-sm space-y-1">
+                <li>• Quiz dinâmico e adaptativo</li>
+                <li>• Perguntas condicionais</li>
+                <li>• Análise de complexidade técnica</li>
+                <li>• Estimativa de infraestrutura</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[#f1fa8c] mb-2">Análise Avançada</h3>
+              <ul className="text-sm space-y-1">
+                <li>• Validação de preço de mercado</li>
+                <li>• Sugestões de otimização</li>
+                <li>• Justificativa técnica detalhada</li>
+                <li>• Exportação de contrato</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#282a36]/50 p-6 rounded-xl">
           <h2 className="text-xl font-bold text-[#ffb86c] mb-3">Objetivo</h2>
           <p className="leading-relaxed">
-            Ajudar desenvolvedores, especialmente iniciantes, a precificar seus projetos de forma justa e profissional, 
-            evitando cobrar muito pouco ou muito além do mercado.
+            Ajudar desenvolvedores brasileiros a precificar seus projetos de forma justa e profissional, 
+            considerando a realidade do mercado nacional e fornecendo ferramentas para negociação transparente.
+            A ferramenta busca valorizar o trabalho do desenvolvedor e educar sobre precificação adequada.
           </p>
         </div>
 
