@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export interface ProjectData {
   [key: string]: { value: string; label: string; multiplier: number; description?: string };
@@ -12,7 +12,7 @@ export async function generateProjectEstimate(projectData: ProjectData): Promise
   suggestions: string[];
   marketValidation: string;
 }> {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   // Criar descrição detalhada do projeto
   const projectDescription = Object.entries(projectData)
@@ -119,7 +119,7 @@ SUGESTOES:
 }
 
 function calculateFallbackEstimate(projectData: ProjectData): number {
-  const baseValue = 3500; // Valor base mais realista para o mercado brasileiro
+  const baseValue = 2500; // Valor base aumentado para o mercado brasileiro
   let multiplier = 1;
   
   // Aplicar multiplicadores de todas as respostas
@@ -135,7 +135,7 @@ export async function chatWithDevinho(
   context: string[], 
   contextData?: any
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   let contextPrompt = '';
   let detailedContext = '';

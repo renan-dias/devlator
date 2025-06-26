@@ -396,7 +396,14 @@ const QUESTIONS: Question[] = [
 export default function CalculadoraPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
-  const [estimate, setEstimate] = useState<number | null>(null);
+  const [estimate, setEstimate] = useState<{min: number, max: number} | null>(null);
+  const [estimateDetails, setEstimateDetails] = useState<{
+    breakdown: string[];
+    hosting: string;
+    maintenance: string;
+    extras: string[];
+  } | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string>('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -446,17 +453,41 @@ export default function CalculadoraPage() {
       }
 
       const result = await response.json();
-      setEstimate(result.estimate);
+      
+      // Criar intervalo baseado na estimativa da IA
+      const baseEstimate = result.estimate;
+      const minEstimate = Math.round(baseEstimate * 0.8); // -20%
+      const maxEstimate = Math.round(baseEstimate * 1.3); // +30%
+      
+      setEstimate({ min: minEstimate, max: maxEstimate });
       setAiReasoning(result.reasoning);
       setAiSuggestions(result.suggestions);
       setMarketValidation(result.marketValidation);
+
+      // Adicionar detalhes da estimativa
+      setEstimateDetails({
+        breakdown: [
+          `Desenvolvimento: R$ ${Math.round(baseEstimate * 0.7).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.9).toLocaleString('pt-BR')}`,
+          `Testes e QA: R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.15).toLocaleString('pt-BR')}`,
+          `Deploy e configuração: R$ ${Math.round(baseEstimate * 0.05).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')}`
+        ],
+        hosting: `R$ 30 - R$ 300/mês (dependendo do tráfego e recursos)`,
+        maintenance: `R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.2).toLocaleString('pt-BR')}/ano`,
+        extras: [
+          'Domínio: R$ 40 - R$ 120/ano',
+          'SSL: R$ 0 - R$ 500/ano (Let\'s Encrypt gratuito)',
+          'Backup: R$ 20 - R$ 100/mês',
+          'CDN: R$ 50 - R$ 200/mês',
+          'Monitoramento: R$ 0 - R$ 150/mês'
+        ]
+      });
       
       // Salvar no histórico local
       const historyItem = {
         id: Date.now(),
         date: new Date().toLocaleString('pt-BR'),
         answers: finalAnswers,
-        estimate: result.estimate,
+        estimate: { min: minEstimate, max: maxEstimate, base: baseEstimate },
         reasoning: result.reasoning,
         suggestions: result.suggestions,
         marketValidation: result.marketValidation
@@ -464,11 +495,21 @@ export default function CalculadoraPage() {
       
       const existingHistory = JSON.parse(localStorage.getItem('devlator-history') || '[]');
       localStorage.setItem('devlator-history', JSON.stringify([historyItem, ...existingHistory]));
+
+      // Salvar contexto para o chat
+      const chatContext = {
+        projectData: finalAnswers,
+        estimate: baseEstimate,
+        reasoning: result.reasoning,
+        marketValidation: result.marketValidation,
+        suggestions: result.suggestions
+      };
+      localStorage.setItem('devlator-chat-context', JSON.stringify(chatContext));
       
     } catch (error) {
       console.error('Erro ao calcular estimativa:', error);
       // Fallback calculation mais sofisticado
-      const baseValue = 1500; // Valor base mais realista
+      const baseValue = 2500; // Valor base aumentado
       let finalMultiplier = 1;
       
       Object.values(finalAnswers).forEach((answer: any) => {
@@ -476,7 +517,28 @@ export default function CalculadoraPage() {
       });
       
       const fallbackEstimate = Math.round(baseValue * finalMultiplier);
-      setEstimate(fallbackEstimate);
+      const minEstimate = Math.round(fallbackEstimate * 0.8);
+      const maxEstimate = Math.round(fallbackEstimate * 1.3);
+      
+      setEstimate({ min: minEstimate, max: maxEstimate });
+      
+      setEstimateDetails({
+        breakdown: [
+          `Desenvolvimento: R$ ${Math.round(fallbackEstimate * 0.7).toLocaleString('pt-BR')} - R$ ${Math.round(fallbackEstimate * 0.9).toLocaleString('pt-BR')}`,
+          `Testes e QA: R$ ${Math.round(fallbackEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(fallbackEstimate * 0.15).toLocaleString('pt-BR')}`,
+          `Deploy e configuração: R$ ${Math.round(fallbackEstimate * 0.05).toLocaleString('pt-BR')} - R$ ${Math.round(fallbackEstimate * 0.1).toLocaleString('pt-BR')}`
+        ],
+        hosting: `R$ 30 - R$ 300/mês (dependendo do tráfego e recursos)`,
+        maintenance: `R$ ${Math.round(fallbackEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(fallbackEstimate * 0.2).toLocaleString('pt-BR')}/ano`,
+        extras: [
+          'Domínio: R$ 40 - R$ 120/ano',
+          'SSL: R$ 0 - R$ 500/ano (Let\'s Encrypt gratuito)',
+          'Backup: R$ 20 - R$ 100/mês',
+          'CDN: R$ 50 - R$ 200/mês',
+          'Monitoramento: R$ 0 - R$ 150/mês'
+        ]
+      });
+      
       setAiReasoning('Estimativa calculada com base em parâmetros técnicos e experiência de mercado. Valores podem variar conforme região e especialização.');
       setMarketValidation('Valor alinhado com práticas do mercado brasileiro. Projetos similares variam entre 70% a 130% dependendo da complexidade e região.');
       setAiSuggestions([
@@ -500,6 +562,8 @@ export default function CalculadoraPage() {
     setAiSuggestions([]);
     setMarketValidation('');
     setApplicableQuestions([]);
+    setEstimateDetails(null);
+    setShowDetails(false);
   };
 
   const goToPreviousQuestion = () => {
@@ -533,7 +597,7 @@ DADOS DO PROJETO:
 Projeto: ${projectName}
 Desenvolvedor/Empresa: ${developerName}
 Data: ${contractData.date}
-Valor Total: R$ ${estimate!.toLocaleString('pt-BR')}
+Valor Total: R$ ${estimate!.min.toLocaleString('pt-BR')} - R$ ${estimate!.max.toLocaleString('pt-BR')}
 
 ESPECIFICAÇÕES TÉCNICAS:
 ${Object.entries(answers).map(([key, value]: [string, any]) => {
@@ -595,11 +659,50 @@ https://devlator.com
       <section className="w-full max-w-2xl mx-auto p-4 md:p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-4 md:mt-8">
         <h2 className="text-2xl md:text-3xl font-bold text-[#50fa7b] mb-6 text-center">Estimativa Calculada</h2>
         <div className="bg-[#282a36] rounded-xl p-6 md:p-8 border border-[#6272a4] text-center mb-6">
-          <div className="text-3xl md:text-5xl font-bold text-[#50fa7b] mb-2">
-            R$ {estimate.toLocaleString('pt-BR')}
+          <div className="text-2xl md:text-4xl font-bold text-[#50fa7b] mb-2">
+            R$ {estimate.min.toLocaleString('pt-BR')} - R$ {estimate.max.toLocaleString('pt-BR')}
           </div>
-          <p className="text-[#f1fa8c] text-sm md:text-base">Valor estimado para seu projeto</p>
+          <p className="text-[#f1fa8c] text-sm md:text-base">Faixa de valores estimada para seu projeto</p>
+          
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="mt-4 px-4 py-2 bg-[#bd93f9] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all"
+          >
+            {showDetails ? 'Ocultar' : 'Ver'} Detalhes de Custos
+          </button>
         </div>
+
+        {showDetails && estimateDetails && (
+          <div className="bg-[#282a36]/50 rounded-xl p-6 border border-[#6272a4] mb-6">
+            <h3 className="text-xl font-bold text-[#bd93f9] mb-4">Detalhamento de Custos</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-lg font-semibold text-[#50fa7b] mb-2">💻 Desenvolvimento</h4>
+                {estimateDetails.breakdown.map((item, index) => (
+                  <p key={index} className="text-[#f8f8f2] text-sm ml-4">• {item}</p>
+                ))}
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold text-[#8be9fd] mb-2">🌐 Hospedagem</h4>
+                <p className="text-[#f8f8f2] text-sm ml-4">• {estimateDetails.hosting}</p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold text-[#f1fa8c] mb-2">🔧 Manutenção Anual</h4>
+                <p className="text-[#f8f8f2] text-sm ml-4">• {estimateDetails.maintenance}</p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold text-[#ff79c6] mb-2">📦 Custos Extras</h4>
+                {estimateDetails.extras.map((extra, index) => (
+                  <p key={index} className="text-[#f8f8f2] text-sm ml-4">• {extra}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="space-y-3 mb-6">
           <h3 className="text-xl font-bold text-[#bd93f9]">Resumo das Respostas:</h3>
@@ -651,10 +754,11 @@ https://devlator.com
           </button>
           <button 
             onClick={() => {
-              // Salvar contexto para o chat
+              // Salvar contexto para o chat (usar valor médio para o chat)
+              const avgEstimate = Math.round((estimate.min + estimate.max) / 2);
               const chatContext = {
                 projectData: answers,
-                estimate: estimate,
+                estimate: avgEstimate,
                 reasoning: aiReasoning,
                 marketValidation: marketValidation,
                 suggestions: aiSuggestions
