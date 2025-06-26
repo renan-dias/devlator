@@ -9,10 +9,12 @@ interface QuestionOption {
   description?: string;
 }
 
+import React from 'react';
+
 interface Question {
   id: string;
   question: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   options: QuestionOption[];
   condition?: (answers: Record<string, any>) => boolean;
   category: string;
@@ -278,6 +280,73 @@ export default function CalculadoraPage() {
       delete newAnswers[currentQuestion.id];
       setAnswers(newAnswers);
     }
+  };
+
+  const exportContract = (projectName: string, developerName: string) => {
+    const contractData = {
+      projectName,
+      developerName,
+      date: new Date().toLocaleDateString('pt-BR'),
+      estimate: estimate!,
+      answers,
+      aiReasoning,
+      marketValidation,
+      aiSuggestions
+    };
+
+    const contractText = `
+CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE DESENVOLVIMENTO
+===============================================
+
+DADOS DO PROJETO:
+Projeto: ${projectName}
+Desenvolvedor/Empresa: ${developerName}
+Data: ${contractData.date}
+Valor Total: R$ ${estimate!.toLocaleString('pt-BR')}
+
+ESPECIFICAÇÕES TÉCNICAS:
+${Object.entries(answers).map(([key, value]: [string, any]) => {
+  const question = QUESTIONS.find((q: Question) => q.id === key);
+  return `- ${question?.question}: ${value.label}`;
+}).join('\n')}
+
+ANÁLISE TÉCNICA:
+${aiReasoning}
+
+VALIDAÇÃO DE MERCADO:
+${marketValidation}
+
+RECOMENDAÇÕES:
+${aiSuggestions.map((suggestion, i) => `${i + 1}. ${suggestion}`).join('\n')}
+
+TERMOS E CONDIÇÕES:
+1. O valor acima é uma estimativa baseada nas informações fornecidas
+2. Alterações no escopo podem impactar o valor final
+3. Pagamento sugerido: 50% início, 50% entrega
+4. Prazo de entrega será acordado separadamente
+5. Código fonte será entregue ao final do projeto
+
+ASSINATURAS:
+_________________________        _________________________
+Desenvolvedor/Empresa             Cliente
+
+Data: ___/___/______              Data: ___/___/______
+
+---
+Gerado pelo Devlator - Calculadora para DEVs
+https://devlator.com
+`;
+
+    // Criar e baixar arquivo
+    const blob = new Blob([contractText], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `contrato-${projectName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   if (isCalculating) {
