@@ -1,7 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 #pastas
-/.github
-
+# Remover /.github do .gitignore para permitir versionamento das instruções do Copilot
 # dependencies
 /node_modules
 /.pnp

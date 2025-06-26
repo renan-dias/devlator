@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from "react";
 
 const GREETINGS = [
-  `Olá, DEV! Pronto para estimar seu projeto?`,
-  `Bem-vindo ao Devlator! Vamos calcular juntos?`,
-  `Preparado para descobrir o valor do seu projeto?`,
-  `Vamos começar sua jornada de precificação!`,
-  `Devlator: sua calculadora para projetos de DEV!`,
+  `console.log("Olá DEV! Pronto para estimar?");`,
+  `function calcularProjeto() { return "Sucesso!"; }`,
+  `// TODO: Precificar meu próximo projeto`,
+  `const projeto = new Estimativa();`,
+  `if (dev.temProjeto) { usar(Devlator); }`,
+  `npm install devlator-estimativas`,
+  `git commit -m "Projeto precificado!"`,
+  `let valor = await calcularEstimativa();`,
 ];
 
 export default function TypingGreeting() {
   const [index, setIndex] = useState(0);
   const [displayed, setDisplayed] = useState("");
   const [typing, setTyping] = useState(true);
+
+  useEffect(() => {
+    // Randomizar a primeira saudação
+    setIndex(Math.floor(Math.random() * GREETINGS.length));
+  }, []);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -25,15 +33,17 @@ export default function TypingGreeting() {
         setTyping(true);
         setDisplayed("");
         setIndex((prev) => (prev + 1) % GREETINGS.length);
-      }, 2200);
+      }, 2500);
     }
     return () => clearTimeout(timeout);
   }, [displayed, typing, index]);
 
   return (
-    <pre className="text-lg sm:text-2xl font-mono bg-white/10 dark:bg-black/20 rounded-xl px-6 py-4 shadow-lg backdrop-blur border border-white/20 transition-all animate-fade-in">
-      <span>{displayed}</span>
-      <span className="inline-block w-2 animate-blink">|</span>
-    </pre>
+    <div className="w-full max-w-2xl mx-auto">
+      <pre className="text-sm md:text-lg font-mono bg-[#282a36] rounded-xl px-4 md:px-6 py-3 md:py-4 shadow-lg border border-[#44475a] transition-all animate-fade-in overflow-x-auto">
+        <span className="text-[#50fa7b]">{displayed}</span>
+        <span className="inline-block w-2 animate-blink text-[#f8f8f2]">|</span>
+      </pre>
+    </div>
   );
 }

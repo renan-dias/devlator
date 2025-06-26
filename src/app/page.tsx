@@ -1,126 +1,49 @@
-import Image from "next/image";
+'use client';
+import Link from "next/link";
 import TypingGreeting from "@/components/TypingGreeting";
-import ProjectQuiz from "@/components/ProjectQuiz";
-import { useState } from "react";
+import { FaArrowRight, FaCode, FaRocket } from "react-icons/fa";
 
-export default function Home() {
-  const [quizDone, setQuizDone] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
-
+export default function HomePage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start w-full max-w-2xl">
+    <div className="w-full max-w-4xl mx-auto p-4 md:p-8 space-y-8">
+      {/* Hero Section */}
+      <section className="text-center bg-[#44475a]/40 rounded-2xl p-8 md:p-12 shadow-xl backdrop-blur border border-[#6272a4]/30">
         <TypingGreeting />
-        {!quizDone ? (
-          <ProjectQuiz onFinish={(answers) => { setQuizDone(true); setQuizAnswers(answers); }} />
-        ) : (
-          <div className="w-full max-w-md mx-auto bg-white/10 dark:bg-black/20 rounded-2xl p-8 shadow-xl backdrop-blur border border-white/20 animate-fade-in">
-            <h2 className="text-xl font-bold mb-4">Respostas do Quiz</h2>
-            <ul className="space-y-2">
-              {quizAnswers && Object.entries(quizAnswers).map(([key, value]) => (
-                <li key={key} className="flex justify-between border-b border-white/10 pb-1">
-                  <span className="capitalize">{key}</span>
-                  <span className="font-semibold">{value}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-6 text-center text-sm text-gray-400">(Aqui será exibida a tabela de estimativas e opções para conversar com o Devinho)</div>
-          </div>
-        )}
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+        <h1 className="text-3xl md:text-5xl font-bold text-[#bd93f9] mt-8 mb-4">
+          <FaCode className="inline mr-4" />
+          Devlator
+        </h1>
+        <p className="text-lg md:text-xl text-[#f8f8f2] mb-6 max-w-2xl mx-auto leading-relaxed">
+          Tem um projeto e quer estimar quanto cobrar? A Devlator está aqui para te ajudar!
+        </p>
+        <p className="text-base md:text-lg text-[#f1fa8c] mb-8">
+          Calculadora inteligente com IA para precificação de projetos de desenvolvimento.
+        </p>
+        <Link 
+          href="/calculadora" 
+          className="inline-flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all shadow-lg text-sm md:text-base"
+        >
+          <FaRocket />
+          Começar Agora
+          <FaArrowRight />
+        </Link>
+      </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Features */}
+      <section className="grid md:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-[#44475a]/30 p-4 md:p-6 rounded-xl border border-[#6272a4]/20">
+          <h3 className="text-lg font-bold text-[#bd93f9] mb-3">Calculadora IA</h3>
+          <p className="text-[#f8f8f2] text-sm md:text-base">Questionário inteligente que analisa seu projeto e sugere valores justos.</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="bg-[#44475a]/30 p-4 md:p-6 rounded-xl border border-[#6272a4]/20">
+          <h3 className="text-lg font-bold text-[#50fa7b] mb-3">Chat Devinho</h3>
+          <p className="text-[#f8f8f2] text-sm md:text-base">Converse com nossa IA sobre detalhes específicos do seu projeto.</p>
+        </div>
+        <div className="bg-[#44475a]/30 p-4 md:p-6 rounded-xl border border-[#6272a4]/20">
+          <h3 className="text-lg font-bold text-[#ffb86c] mb-3">Histórico</h3>
+          <p className="text-[#f8f8f2] text-sm md:text-base">Salve e acompanhe todas as suas estimativas anteriores.</p>
+        </div>
+      </section>
     </div>
   );
 }
