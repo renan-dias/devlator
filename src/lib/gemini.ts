@@ -133,46 +133,130 @@ function calculateFallbackEstimate(projectData: ProjectData): number {
 export async function chatWithDevinho(
   message: string, 
   context: string[], 
-  projectData?: ProjectData
+  contextData?: any
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
   let contextPrompt = '';
-  if (context.includes('regional')) {
-    contextPrompt += 'Considere valores do mercado brasileiro de desenvolvimento. ';
+  let detailedContext = '';
+  let specificInstructions = '';
+  
+  // Contexto regional - mais detalhado
+  if (context.includes('regional') && contextData?.regional) {
+    const { city, state } = contextData.regional;
+    contextPrompt += `Analise preços específicos para o mercado de ${city}, ${state}. `;
+    
+    // Ajustes regionais específicos
+    const isCapital = ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Belo Horizonte', 'Salvador', 'Fortaleza', 'Curitiba', 'Porto Alegre', 'Recife', 'Goiânia'].includes(city);
+    const priceModifier = isCapital ? 1.0 : 0.75; // Interior tem preços ~25% menores
+    
+    detailedContext += `\n🏙️ ANÁLISE REGIONAL:
+- Localização: ${city}, ${state}
+- Tipo de mercado: ${isCapital ? 'Capital/Grande centro' : 'Interior'}
+- Ajuste de preço: ${isCapital ? 'Preços padrão de mercado' : 'Redução de ~25% vs capitais'}
+- Concorrência: ${isCapital ? 'Alta (muitos devs)' : 'Baixa/Média (menos concorrência)'}
+- Custo de vida: ${isCapital ? 'Alto' : 'Médio/Baixo'}\n`;
+    
+    specificInstructions += `\n✅ INSTRUÇÕES REGIONAIS:
+- ${isCapital ? 'Use valores de mercado padrão (R$ 50-150/hora)' : 'Reduza valores em 20-30% (R$ 35-100/hora)'}
+- Considere que ${isCapital ? 'clientes têm mais budget' : 'clientes são mais sensíveis ao preço'}
+- ${isCapital ? 'Enfatize qualidade e especialização' : 'Enfatize custo-benefício e economia'}`;
   }
-  if (context.includes('figma')) {
-    contextPrompt += 'O usuário mencionou ter designs/mockups prontos. ';
+  
+  // Contexto Figma - análise visual detalhada
+  if (context.includes('figma') && contextData?.figma) {
+    contextPrompt += 'ANÁLISE DE DESIGN: O usuário enviou capturas do Figma. ';
+    detailedContext += `\n🎨 DESIGN FIGMA CARREGADO:
+- Imagem do design disponível para análise
+- Foque em: complexidade visual, número de telas, componentes, animações
+- Avalie: responsividade necessária, interações, estados diferentes\n`;
+    
+    specificInstructions += `\n✅ INSTRUÇÕES PARA FIGMA:
+- Analise a complexidade visual (simples/média/alta)
+- Conte aproximadamente quantas telas/componentes vê
+- Identifique funcionalidades: formulários, listas, gráficos, mapas, etc.
+- Estime tempo de implementação baseado no design
+- Considere: Design simples (+0%), Médio (+25%), Complexo (+50%)`;
   }
-  if (context.includes('site')) {
-    contextPrompt += 'O usuário tem sites de referência como exemplo. ';
+  
+  // Contexto Site - comparação funcional
+  if (context.includes('site') && contextData?.site) {
+    const { url, analysis } = contextData.site;
+    contextPrompt += `SITE DE REFERÊNCIA: Analisando "${url}" como base. `;
+    detailedContext += `\n🌐 SITE DE REFERÊNCIA:
+- URL: ${url}
+- Status: Site analisado com sucesso
+- Use para comparação de funcionalidades e complexidade\n`;
+    
+    specificInstructions += `\n✅ INSTRUÇÕES PARA SITE:
+- Compare funcionalidades do site de referência
+- Identifique: e-commerce, blog, dashboard, formulários, etc.
+- Estime complexidade similar/menor/maior que a referência
+- Considere tecnologias necessárias para reproduzir funcionalidades
+- Use como base para argumentar preços (ex: "sites similares custam X")`;
   }
-  if (context.includes('doc')) {
-    contextPrompt += 'O usuário tem documentação técnica disponível. ';
+  
+  // Contexto Documentação - especificações técnicas
+  if (context.includes('doc') && contextData?.doc) {
+    const fileCount = contextData.doc.files?.length || 0;
+    contextPrompt += `DOCUMENTAÇÃO TÉCNICA: ${fileCount} arquivo(s) de especificação. `;
+    detailedContext += `\n📄 DOCUMENTAÇÃO DISPONÍVEL:
+- Quantidade: ${fileCount} arquivo(s)
+- Tipos: PDFs, docs, especificações técnicas
+- Use para entender escopo detalhado do projeto\n`;
+    
+    specificInstructions += `\n✅ INSTRUÇÕES PARA DOCUMENTAÇÃO:
+- Base suas respostas nas especificações fornecidas
+- Se mencionarem tecnologias específicas, considere na precificação
+- Documente bem = menos mudanças = preço mais justo
+- Especificações detalhadas = estimativa mais precisa
+- Considere complexidade baseada nos requisitos documentados`;
   }
 
+  // Contexto do projeto da calculadora
   let projectContext = '';
-  if (projectData) {
-    projectContext = `
-Dados do projeto atual:
-- Tipo: ${projectData.tipo.label}
-- Complexidade: ${projectData.complexidade.label}
-- Equipe: ${projectData.equipe.label}
-- Prazo: ${projectData.prazo.label}
-- Banco: ${projectData.banco.label}
+  if (contextData?.projectData) {
+    const projectData = contextData.projectData;
+    projectContext = `\n💼 PROJETO DA CALCULADORA:
+- Tipo: ${projectData.tipo?.label || 'Não especificado'}
+- Complexidade: ${projectData.complexidade?.label || 'Não especificado'}
+- Equipe: ${projectData.equipe?.label || 'Não especificado'}
+- Prazo: ${projectData.prazo?.label || 'Não especificado'}
+- Banco de dados: ${projectData.banco?.label || 'Não especificado'}
 `;
   }
 
   const prompt = `
-Você é o Devinho, um assistente especializado em precificação de projetos de desenvolvimento de software no Brasil. 
-Seja amigável, técnico quando necessário, e sempre pense em valores justos para desenvolvedores brasileiros.
+🤖 DEVINHO - Assistente de Precificação de Software
+
+Você é o Devinho, especialista em precificação de projetos de desenvolvimento no Brasil.
+Seja amigável, técnico e sempre justo com valores para desenvolvedores brasileiros.
 
 ${contextPrompt}
+
+📊 DADOS DISPONÍVEIS:
+${detailedContext}
 ${projectContext}
 
-Pergunta do usuário: ${message}
+❓ PERGUNTA DO USUÁRIO: 
+${message}
 
-Responda de forma clara e objetiva, sempre considerando o contexto brasileiro de desenvolvimento.
+${specificInstructions}
+
+🎯 DIRETRIZES GERAIS:
+- Use valores em reais (R$) sempre
+- Considere mercado brasileiro 2024
+- Seja transparente sobre cálculos
+- Sugira melhorias quando possível
+- Se detectar informações suficientes, ofereça precificação detalhada
+- Valores hora: Junior (R$25-50), Pleno (R$50-100), Senior (R$100-200)
+- Projetos pequenos: R$2.000-15.000, médios: R$15.000-50.000, grandes: R$50.000+
+
+📝 FORMATO DE RESPOSTA:
+- Seja conversacional e amigável
+- Use emojis para destacar pontos importantes
+- Explique o raciocínio por trás dos valores
+- Dê exemplos práticos quando relevante
 `;
 
   try {
