@@ -1,80 +1,206 @@
 'use client';
-import { useState } from "react";
-import { FaRocket, FaCode, FaUsers, FaClock, FaDatabase, FaMobile, FaDesktop, FaCloud } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaRocket, FaCode, FaUsers, FaClock, FaDatabase, FaMobile, FaDesktop, FaCloud, FaServer, FaShieldAlt, FaCog, FaGraduationCap, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
 
-const QUESTION_SETS = [
+interface QuestionOption {
+  value: string;
+  label: string;
+  multiplier: number;
+  description?: string;
+}
+
+interface Question {
+  id: string;
+  question: string;
+  icon: JSX.Element;
+  options: QuestionOption[];
+  condition?: (answers: Record<string, any>) => boolean;
+  category: string;
+}
+
+const QUESTIONS: Question[] = [
+  // Básicas - Sempre aparecem
   {
     id: "tipo",
     question: "Que tipo de projeto você quer desenvolver?",
     icon: <FaCode className="text-[#bd93f9]" />,
+    category: "Básica",
     options: [
-      { value: "website", label: "Website/Landing Page", multiplier: 1 },
-      { value: "webapp", label: "Aplicação Web Completa", multiplier: 2.5 },
-      { value: "mobile", label: "App Mobile", multiplier: 3 },
-      { value: "ecommerce", label: "E-commerce", multiplier: 4 },
-      { value: "sistema", label: "Sistema Complexo", multiplier: 5 }
+      { value: "website", label: "Website/Landing Page", multiplier: 1, description: "Site institucional ou página de venda" },
+      { value: "webapp", label: "Aplicação Web Completa", multiplier: 2.5, description: "Sistema web com autenticação e funcionalidades" },
+      { value: "mobile", label: "App Mobile", multiplier: 3, description: "Aplicativo para iOS/Android" },
+      { value: "ecommerce", label: "E-commerce", multiplier: 4, description: "Loja virtual completa" },
+      { value: "sistema", label: "Sistema Complexo", multiplier: 5, description: "ERP, CRM ou sistema empresarial" }
     ]
   },
   {
     id: "complexidade",
     question: "Qual a complexidade das funcionalidades?",
     icon: <FaRocket className="text-[#50fa7b]" />,
+    category: "Básica",
     options: [
-      { value: "simples", label: "Simples (CRUD básico)", multiplier: 1 },
-      { value: "media", label: "Média (Integrações, APIs)", multiplier: 1.8 },
-      { value: "complexa", label: "Complexa (IA, Machine Learning)", multiplier: 3 },
-      { value: "muito_complexa", label: "Muito Complexa (Blockchain, etc)", multiplier: 4.5 }
+      { value: "simples", label: "Simples (CRUD básico)", multiplier: 1, description: "Operações básicas de dados" },
+      { value: "media", label: "Média (Integrações, APIs)", multiplier: 1.8, description: "APIs externas, pagamentos" },
+      { value: "complexa", label: "Complexa (IA, Machine Learning)", multiplier: 3, description: "Inteligência artificial, análise de dados" },
+      { value: "muito_complexa", label: "Muito Complexa (Blockchain, IoT)", multiplier: 4.5, description: "Tecnologias emergentes" }
     ]
   },
+
+  // Equipe e Experiência
   {
     id: "equipe",
     question: "Quantas pessoas trabalharão no projeto?",
     icon: <FaUsers className="text-[#ffb86c]" />,
+    category: "Equipe",
     options: [
-      { value: "solo", label: "Só eu", multiplier: 1 },
-      { value: "dupla", label: "2-3 pessoas", multiplier: 0.8 },
-      { value: "equipe", label: "4-6 pessoas", multiplier: 0.6 },
-      { value: "grande", label: "Mais de 6 pessoas", multiplier: 0.4 }
+      { value: "solo", label: "Só eu", multiplier: 1, description: "Desenvolvedor solo" },
+      { value: "dupla", label: "2-3 pessoas", multiplier: 0.8, description: "Pequena equipe" },
+      { value: "equipe", label: "4-6 pessoas", multiplier: 0.6, description: "Equipe média" },
+      { value: "grande", label: "Mais de 6 pessoas", multiplier: 0.4, description: "Equipe grande" }
     ]
   },
+  {
+    id: "experiencia",
+    question: "Qual seu nível de experiência com as tecnologias do projeto?",
+    icon: <FaGraduationCap className="text-[#f1fa8c]" />,
+    category: "Equipe",
+    options: [
+      { value: "iniciante", label: "Iniciante", multiplier: 2, description: "Primeiro projeto com essas tecnologias" },
+      { value: "intermediario", label: "Intermediário", multiplier: 1.5, description: "Alguma experiência prévia" },
+      { value: "avancado", label: "Avançado", multiplier: 1, description: "Muita experiência" },
+      { value: "especialista", label: "Especialista", multiplier: 0.8, description: "Expert na tecnologia" }
+    ]
+  },
+
+  // Prazo e Urgência
   {
     id: "prazo",
     question: "Qual o prazo para entrega?",
     icon: <FaClock className="text-[#ff79c6]" />,
+    category: "Prazo",
     options: [
-      { value: "urgente", label: "Muito urgente (1-2 semanas)", multiplier: 2 },
-      { value: "rapido", label: "Rápido (1 mês)", multiplier: 1.5 },
-      { value: "normal", label: "Normal (2-3 meses)", multiplier: 1 },
-      { value: "flexivel", label: "Flexível (mais de 3 meses)", multiplier: 0.8 }
+      { value: "urgente", label: "Muito urgente (1-2 semanas)", multiplier: 3, description: "Trabalho 24/7, stress alto" },
+      { value: "rapido", label: "Rápido (1 mês)", multiplier: 1.8, description: "Ritmo acelerado" },
+      { value: "normal", label: "Normal (2-3 meses)", multiplier: 1, description: "Desenvolvimento saudável" },
+      { value: "flexivel", label: "Flexível (mais de 3 meses)", multiplier: 0.8, description: "Sem pressa" }
     ]
   },
+
+  // Tecnologia - Condicionais
   {
     id: "banco",
     question: "Que tipo de banco de dados será usado?",
     icon: <FaDatabase className="text-[#8be9fd]" />,
+    category: "Tecnologia",
+    condition: (answers) => answers.tipo?.value !== "website",
     options: [
-      { value: "simples", label: "Arquivo local/JSON", multiplier: 0.5 },
-      { value: "sql", label: "Banco SQL (MySQL, PostgreSQL)", multiplier: 1 },
-      { value: "nosql", label: "NoSQL (MongoDB, Firebase)", multiplier: 1.2 },
-      { value: "multiplo", label: "Múltiplos bancos", multiplier: 1.8 }
+      { value: "simples", label: "Arquivo local/JSON", multiplier: 0.5, description: "Dados simples" },
+      { value: "sql", label: "Banco SQL (MySQL, PostgreSQL)", multiplier: 1, description: "Banco relacional" },
+      { value: "nosql", label: "NoSQL (MongoDB, Firebase)", multiplier: 1.2, description: "Banco não-relacional" },
+      { value: "multiplo", label: "Múltiplos bancos", multiplier: 1.8, description: "Arquitetura complexa" }
+    ]
+  },
+  {
+    id: "plataforma",
+    question: "Em quais plataformas o app será disponibilizado?",
+    icon: <FaMobile className="text-[#ff79c6]" />,
+    category: "Tecnologia",
+    condition: (answers) => answers.tipo?.value === "mobile",
+    options: [
+      { value: "android", label: "Apenas Android", multiplier: 1, description: "Uma plataforma" },
+      { value: "ios", label: "Apenas iOS", multiplier: 1.2, description: "Plataforma Apple" },
+      { value: "ambos", label: "Android + iOS", multiplier: 1.8, description: "Multiplataforma" },
+      { value: "hibrido", label: "App Híbrido", multiplier: 1.3, description: "React Native, Flutter" }
+    ]
+  },
+
+  // Infraestrutura
+  {
+    id: "hospedagem",
+    question: "Onde o projeto será hospedado?",
+    icon: <FaCloud className="text-[#8be9fd]" />,
+    category: "Infraestrutura",
+    condition: (answers) => answers.tipo?.value !== "mobile",
+    options: [
+      { value: "compartilhada", label: "Hospedagem compartilhada", multiplier: 0.8, description: "Básica e barata" },
+      { value: "vps", label: "VPS/Cloud básico", multiplier: 1, description: "Servidor virtual" },
+      { value: "aws", label: "AWS/Azure/GCP", multiplier: 1.5, description: "Cloud profissional" },
+      { value: "kubernetes", label: "Kubernetes/Docker", multiplier: 2, description: "Infraestrutura avançada" }
+    ]
+  },
+  {
+    id: "seguranca",
+    question: "Qual o nível de segurança necessário?",
+    icon: <FaShieldAlt className="text-[#50fa7b]" />,
+    category: "Infraestrutura",
+    condition: (answers) => answers.tipo?.value === "webapp" || answers.tipo?.value === "sistema" || answers.tipo?.value === "ecommerce",
+    options: [
+      { value: "basica", label: "Segurança básica", multiplier: 1, description: "HTTPS, autenticação simples" },
+      { value: "media", label: "Segurança média", multiplier: 1.5, description: "2FA, criptografia" },
+      { value: "alta", label: "Segurança alta", multiplier: 2.5, description: "Auditoria, compliance" },
+      { value: "militar", label: "Nível militar", multiplier: 4, description: "Máxima segurança" }
+    ]
+  },
+
+  // E-commerce específico
+  {
+    id: "pagamento",
+    question: "Quais métodos de pagamento serão integrados?",
+    icon: <FaMoneyBillWave className="text-[#f1fa8c]" />,
+    category: "E-commerce",
+    condition: (answers) => answers.tipo?.value === "ecommerce",
+    options: [
+      { value: "basico", label: "Cartão + PIX", multiplier: 1, description: "Pagamentos básicos" },
+      { value: "completo", label: "Múltiplos métodos", multiplier: 1.8, description: "Boleto, carteiras digitais" },
+      { value: "internacional", label: "Pagamentos internacionais", multiplier: 2.5, description: "PayPal, Stripe global" },
+      { value: "crypto", label: "Inclui criptomoedas", multiplier: 3, description: "Bitcoin, Ethereum" }
+    ]
+  },
+
+  // Manutenção
+  {
+    id: "manutencao",
+    question: "Você fará a manutenção do projeto?",
+    icon: <FaCog className="text-[#ffb86c]" />,
+    category: "Manutenção",
+    options: [
+      { value: "nao", label: "Não, só desenvolvimento", multiplier: 1, description: "Entrega e tchau" },
+      { value: "basica", label: "Manutenção básica (3 meses)", multiplier: 1.2, description: "Suporte inicial" },
+      { value: "completa", label: "Manutenção completa (1 ano)", multiplier: 1.8, description: "Suporte extenso" },
+      { value: "permanente", label: "Manutenção permanente", multiplier: 2.5, description: "Parceria de longo prazo" }
     ]
   }
 ];
 
 export default function CalculadoraPage() {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [estimate, setEstimate] = useState<number | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string>('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [applicableQuestions, setApplicableQuestions] = useState<Question[]>([]);
 
-  const handleAnswer = (answer: any) => {
-    const newAnswers = { ...answers, [QUESTION_SETS[currentQuestion].id]: answer };
+  // Calcular quais perguntas são aplicáveis baseadas nas respostas atuais
+  useEffect(() => {
+    const applicable = QUESTIONS.filter(question => 
+      !question.condition || question.condition(answers)
+    );
+    setApplicableQuestions(applicable);
+  }, [answers]);
+
+  const handleAnswer = (answer: QuestionOption) => {
+    const currentQuestion = applicableQuestions[currentQuestionIndex];
+    const newAnswers = { ...answers, [currentQuestion.id]: answer };
     setAnswers(newAnswers);
 
-    if (currentQuestion < QUESTION_SETS.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+    // Recalcular perguntas aplicáveis após a resposta
+    const newApplicable = QUESTIONS.filter(question => 
+      !question.condition || question.condition(newAnswers)
+    );
+
+    if (currentQuestionIndex < newApplicable.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       calculateEstimate(newAnswers);
     }
@@ -89,10 +215,24 @@ export default function CalculadoraPage() {
       setEstimate(result.estimate);
       setAiReasoning(result.reasoning);
       setAiSuggestions(result.suggestions);
+      
+      // Salvar no histórico local
+      const historyItem = {
+        id: Date.now(),
+        date: new Date().toLocaleString('pt-BR'),
+        answers: finalAnswers,
+        estimate: result.estimate,
+        reasoning: result.reasoning,
+        suggestions: result.suggestions
+      };
+      
+      const existingHistory = JSON.parse(localStorage.getItem('devlator-history') || '[]');
+      localStorage.setItem('devlator-history', JSON.stringify([historyItem, ...existingHistory]));
+      
     } catch (error) {
       console.error('Erro ao calcular estimativa:', error);
-      // Fallback calculation
-      const baseValue = 2000;
+      // Fallback calculation mais sofisticado
+      const baseValue = 3000;
       let finalMultiplier = 1;
       
       Object.values(finalAnswers).forEach((answer: any) => {
@@ -101,11 +241,13 @@ export default function CalculadoraPage() {
       
       const fallbackEstimate = Math.round(baseValue * finalMultiplier);
       setEstimate(fallbackEstimate);
-      setAiReasoning('Estimativa calculada com base em parâmetros técnicos padrão.');
+      setAiReasoning('Estimativa calculada com base em parâmetros técnicos e experiência de mercado. Valores podem variar conforme região e especialização.');
       setAiSuggestions([
-        'Defina bem o escopo antes de começar',
-        'Use metodologias ágeis para melhor controle',
-        'Considere custos de hospedagem e manutenção'
+        'Defina bem o escopo antes de começar o desenvolvimento',
+        'Use metodologias ágeis para melhor controle do projeto',
+        'Considere custos de hospedagem e manutenção no orçamento',
+        'Mantenha documentação atualizada durante o desenvolvimento',
+        'Planeje testes desde o início do projeto'
       ]);
     } finally {
       setIsCalculating(false);
@@ -113,12 +255,24 @@ export default function CalculadoraPage() {
   };
 
   const resetCalculator = () => {
-    setCurrentQuestion(0);
+    setCurrentQuestionIndex(0);
     setAnswers({});
     setEstimate(null);
     setIsCalculating(false);
     setAiReasoning('');
     setAiSuggestions([]);
+    setApplicableQuestions([]);
+  };
+
+  const goToPreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      // Remover a última resposta
+      const currentQuestion = applicableQuestions[currentQuestionIndex];
+      const newAnswers = { ...answers };
+      delete newAnswers[currentQuestion.id];
+      setAnswers(newAnswers);
+    }
   };
 
   if (isCalculating) {
