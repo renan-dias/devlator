@@ -142,7 +142,7 @@ export default function ChatContextSelector({ selected, onChange, onContextData 
       } else {
         onContextData?.('error', { message: `Erro: ${result.error}` });
       }
-    } catch (error) {
+    } catch {
       onContextData?.('error', { message: 'Erro ao analisar o site. Verifique a URL e tente novamente.' });
     } finally {
       setIsLoadingSite(false);

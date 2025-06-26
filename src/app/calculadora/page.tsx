@@ -6,9 +6,9 @@ import {
   FaChartLine, FaGlobe, FaNewspaper, FaLaptopCode, FaShoppingCart, 
   FaBuilding, FaPlug, FaHourglassHalf, FaCalendarAlt, FaCalendarWeek,
   FaCalendarDay, FaPaintBrush, FaFileImage, FaTabletAlt, FaLock,
-  FaUserShield, FaKey, FaNetworkWired, FaLink, FaBrain, FaRobot,
+  FaUserShield, FaKey, FaNetworkWired, FaLink, FaBrain,
   FaCoins, FaCreditCard, FaBox, FaStore, FaDownload, FaFileAlt,
-  FaBug, FaFlask, FaTools, FaMapMarkerAlt, FaUserTie, FaUserFriends
+  FaMapMarkerAlt, FaUserTie, FaUserFriends
 } from "react-icons/fa";
 
 interface QuestionOption {
@@ -119,7 +119,7 @@ interface Question {
   question: string;
   icon: React.ReactElement;
   options: QuestionOption[];
-  condition?: (answers: Record<string, any>) => boolean;
+  condition?: (answers: Record<string, QuestionOption>) => boolean;
   category: string;
 }
 
@@ -498,7 +498,7 @@ const QUESTIONS: Question[] = [
 
 export default function CalculadoraPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, QuestionOption>>({});
   const [estimate, setEstimate] = useState<{min: number, max: number} | null>(null);
   const [estimateDetails, setEstimateDetails] = useState<{
     breakdown: string[];
@@ -538,7 +538,7 @@ export default function CalculadoraPage() {
     }
   };
 
-  const calculateEstimate = async (finalAnswers: Record<string, any>) => {
+  const calculateEstimate = async (finalAnswers: Record<string, QuestionOption>) => {
     setIsCalculating(true);
     
     try {
@@ -703,7 +703,7 @@ Data: ${contractData.date}
 Valor Total: R$ ${estimate!.min.toLocaleString('pt-BR')} - R$ ${estimate!.max.toLocaleString('pt-BR')}
 
 ESPECIFICAÇÕES TÉCNICAS:
-${Object.entries(answers).map(([key, value]: [string, any]) => {
+${Object.entries(answers).map(([key, value]: [string, QuestionOption]) => {
   const question = QUESTIONS.find((q: Question) => q.id === key);
   return `- ${question?.question}: ${value.label}`;
 }).join('\n')}
@@ -894,7 +894,7 @@ https://devlator.com
               Resumo das Respostas
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(answers).map(([key, value]: [string, any]) => {
+              {Object.entries(answers).map(([key, value]: [string, QuestionOption]) => {
                 const question = QUESTIONS.find((q: Question) => q.id === key);
                 return (
                   <div key={key} className="bg-[#44475a]/40 rounded-xl p-4 border border-[#6272a4]/20">

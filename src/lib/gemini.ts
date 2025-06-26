@@ -1,21 +1,18 @@
 // Implementação direta da API Gemini usando fetch
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-finterface ContextData {
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+export interface ProjectData {
+  [key: string]: { value: string; label: string; multiplier: number; description?: string };
+}
+
+interface ContextData {
   figma?: { image: string };
   site?: { url: string; content: string; analysis: string };
   doc?: { files: File[]; analysis?: string };
   regional?: { city: string; state: string; country: string; timezone: string };
   error?: { message: string };
-}
-
-export async function chatWithDevinho(
-  message: string, 
-  context: string[] = [], 
-  contextData?: ContextData
-): Promise<string> {generateContent?key=${GEMINI_API_KEY}`;
-
-export interface ProjectData {
-  [key: string]: { value: string; label: string; multiplier: number; description?: string };
+  projectData?: Record<string, { value: string; label: string; multiplier: number; description?: string }>;
 }
 
 async function callGeminiAPI(prompt: string): Promise<string> {
@@ -209,7 +206,7 @@ function calculateFallbackEstimate(projectData: ProjectData): number {
 export async function chatWithDevinho(
   message: string, 
   context: string[], 
-  contextData?: any
+  contextData?: ContextData
 ): Promise<string> {
   let contextPrompt = '';
   let detailedContext = '';

@@ -70,10 +70,11 @@ export default function ChatPage() {
     }
   }, []);
 
-  const handleContextData = (type: string, data: any) => {
+  const handleContextData = (type: string, data: unknown) => {
     // Tratar erros
     if (type === 'error') {
-      showError(data?.message || 'Erro desconhecido');
+      const errorData = data as { message: string };
+      showError(errorData?.message || 'Erro desconhecido');
       return;
     }
 
@@ -94,13 +95,16 @@ export default function ChatPage() {
         contextMessage = '🎨 Imagem do Figma carregada! Agora posso analisar seu design para dar sugestões mais precisas sobre complexidade visual e funcionalidades.';
         break;
       case 'site':
-        contextMessage = `🌐 Site "${data?.url}" analisado! Identifiquei características que podem servir de referência para sua precificação.`;
+        const siteData = data as { url: string; content: string; analysis: string };
+        contextMessage = `🌐 Site "${siteData?.url}" analisado! Identifiquei características que podem servir de referência para sua precificação.`;
         break;
       case 'doc':
-        contextMessage = `📄 ${data?.files?.length || 0} documento(s) carregado(s)! Posso usar essas informações para entender melhor os requisitos do projeto.`;
+        const docData = data as { files: File[]; analysis?: string };
+        contextMessage = `📄 ${docData?.files?.length || 0} documento(s) carregado(s)! Posso usar essas informações para entender melhor os requisitos do projeto.`;
         break;
       case 'regional':
-        contextMessage = `📍 Localização identificada: ${data?.city}, ${data?.state}. Vou ajustar as sugestões de preço baseado no mercado regional.`;
+        const regionalData = data as { city: string; state: string; country: string; timezone: string };
+        contextMessage = `📍 Localização identificada: ${regionalData?.city}, ${regionalData?.state}. Vou ajustar as sugestões de preço baseado no mercado regional.`;
         break;
     }
 
@@ -212,7 +216,8 @@ export default function ChatPage() {
 
     try {
       const jsPDF = (await import('jspdf')).default;
-      const pdf = new jsPDF();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdf = new jsPDF() as any;
       
       // Configurações
       pdf.setFont('helvetica');
@@ -372,17 +377,21 @@ export default function ChatPage() {
       });
 
       // Rodapé profissional
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const totalPages = (pdf as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
         
         // Linha de rodapé
         pdf.setDrawColor(189, 147, 249);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pdf.line(margin, (pdf as any).internal.pageSize.height - 20, pageWidth - margin, (pdf as any).internal.pageSize.height - 20);
         
         pdf.setFontSize(8);
         pdf.setTextColor(100, 100, 100);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pdf.text('🚀 Relatório gerado pelo Devlator - Calculadora Profissional para DEVs', margin, (pdf as any).internal.pageSize.height - 12);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pdf.text(`devlator.com | Página ${i} de ${totalPages}`, pageWidth - margin - 40, (pdf as any).internal.pageSize.height - 12);
       }
 
