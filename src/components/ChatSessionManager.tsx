@@ -44,10 +44,36 @@ export default function ChatSessionManager({
 
   useEffect(() => {
     // Auto-salvar a sessão atual quando as mensagens mudam
+    const saveCurrentSession = () => {
+      if (currentMessages.length === 0) return;
+
+      const sessionId = currentSessionId || `session-${Date.now()}`;
+      const sessionName = generateSessionName(currentMessages);
+      const lastMessage = currentMessages[currentMessages.length - 1]?.content.substring(0, 50) + '...' || '';
+
+      const newSession: ChatSession = {
+        id: sessionId,
+        name: sessionName,
+        date: new Date().toLocaleDateString('pt-BR'),
+        messages: currentMessages,
+        lastMessage
+      };
+
+      const existingSessions = sessions.filter(s => s.id !== sessionId);
+      const newSessions = [newSession, ...existingSessions].slice(0, 10); // Manter apenas 10 sessões
+
+      saveSessions(newSessions);
+      
+      if (!currentSessionId) {
+        setCurrentSessionId(sessionId);
+        localStorage.setItem(CURRENT_SESSION_KEY, sessionId);
+      }
+    };
+
     if (currentMessages.length > 0) {
       saveCurrentSession();
     }
-  }, [currentMessages]);
+  }, [currentMessages, currentSessionId, sessions]);
 
   const loadSessions = () => {
     try {
@@ -71,32 +97,6 @@ export default function ChatSessionManager({
     const firstUserMessage = messages.find(m => m.role === 'user')?.content || '';
     const words = firstUserMessage.split(' ').slice(0, 4).join(' ');
     return words.length > 30 ? words.substring(0, 30) + '...' : words || 'Conversa sem título';
-  };
-
-  const saveCurrentSession = () => {
-    if (currentMessages.length === 0) return;
-
-    const sessionId = currentSessionId || `session-${Date.now()}`;
-    const sessionName = generateSessionName(currentMessages);
-    const lastMessage = currentMessages[currentMessages.length - 1]?.content.substring(0, 50) + '...' || '';
-
-    const newSession: ChatSession = {
-      id: sessionId,
-      name: sessionName,
-      date: new Date().toLocaleDateString('pt-BR'),
-      messages: currentMessages,
-      lastMessage
-    };
-
-    const existingSessions = sessions.filter(s => s.id !== sessionId);
-    const newSessions = [newSession, ...existingSessions].slice(0, 10); // Manter apenas 10 sessões
-
-    saveSessions(newSessions);
-    
-    if (!currentSessionId) {
-      setCurrentSessionId(sessionId);
-      localStorage.setItem(CURRENT_SESSION_KEY, sessionId);
-    }
   };
 
   const loadSession = (session: ChatSession) => {

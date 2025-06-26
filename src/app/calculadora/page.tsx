@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   FaRocket, FaCode, FaUsers, FaClock, FaDatabase, FaMobile, FaDesktop, 
   FaCloud, FaServer, FaShieldAlt, FaCog, FaGraduationCap, FaMoneyBillWave, 
@@ -18,8 +18,6 @@ interface QuestionOption {
   description?: string;
   icon?: React.ReactElement;
 }
-
-import React from 'react';
 
 // Função para obter ícone baseado no tipo de opção
 const getOptionIcon = (questionId: string, optionValue: string): React.ReactElement => {
@@ -617,7 +615,7 @@ export default function CalculadoraPage() {
       const baseValue = 2500; // Valor base aumentado
       let finalMultiplier = 1;
       
-      Object.values(finalAnswers).forEach((answer: any) => {
+      Object.values(finalAnswers).forEach((answer: QuestionOption) => {
         finalMultiplier *= answer.multiplier;
       });
       

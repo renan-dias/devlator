@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+interface ProjectDataValue {
+  label: string;
+  value: string;
+  multiplier: number;
+  description?: string;
+}
+
+interface ProjectData {
+  [key: string]: ProjectDataValue;
+}
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
-    const projectData = await request.json();
+    const projectData: ProjectData = await request.json();
     
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('API Key não configurada');
@@ -15,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Criar descrição detalhada do projeto
     const projectDescription = Object.entries(projectData)
-      .map(([key, value]: [string, any]) => `${key}: ${value.label}`)
+      .map(([key, value]: [string, ProjectDataValue]) => `${key}: ${value.label}`)
       .join('\n');
 
     const prompt = `
@@ -102,8 +113,14 @@ SUGESTOES:
     console.error('Erro ao gerar estimativa:', error);
     
     // Obter dados do request para fallback
-    const projectData = await request.json();
-    const fallbackEstimate = calculateFallbackEstimate(projectData);
+    let fallbackProjectData: ProjectData;
+    try {
+      fallbackProjectData = await request.json();
+    } catch {
+      fallbackProjectData = {};
+    }
+    
+    const fallbackEstimate = calculateFallbackEstimate(fallbackProjectData);
     
     return NextResponse.json({
       estimate: fallbackEstimate,
@@ -120,11 +137,11 @@ SUGESTOES:
   }
 }
 
-function calculateFallbackEstimate(projectData: any): number {
+function calculateFallbackEstimate(projectData: ProjectData): number {
   const baseValue = 1500; // Valor base mais realista para o mercado brasileiro
   let multiplier = 1;
   
-  Object.values(projectData).forEach((answer: any) => {
+  Object.values(projectData).forEach((answer: ProjectDataValue) => {
     if (answer && answer.multiplier) {
       multiplier *= answer.multiplier;
     }

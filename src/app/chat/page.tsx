@@ -1,13 +1,20 @@
 'use client';
 import { useState, useEffect } from "react";
-import ChatHistory, { addMessage, ChatMessage } from "@/components/ChatHistory";
+import { addMessage, ChatMessage } from "@/components/ChatHistory";
 import ChatContextSelector from "@/components/ChatContextSelector";
 import ChatSessionManager from "@/components/ChatSessionManager";
 import { FaPaperPlane, FaRobot, FaCalculator, FaFilePdf, FaEye, FaExclamationTriangle } from "react-icons/fa";
 import Modal, { useModal } from "@/components/Modal";
 
+interface ProjectDataValue {
+  label: string;
+  value: string;
+  multiplier: number;
+  description?: string;
+}
+
 interface ProjectContext {
-  projectData: any;
+  projectData: Record<string, ProjectDataValue>;
   estimate: number;
   reasoning: string;
   marketValidation: string;
@@ -66,7 +73,7 @@ export default function ChatPage() {
   const handleContextData = (type: string, data: any) => {
     // Tratar erros
     if (type === 'error') {
-      showError(data.message);
+      showError(data?.message || 'Erro desconhecido');
       return;
     }
 
@@ -87,13 +94,13 @@ export default function ChatPage() {
         contextMessage = '🎨 Imagem do Figma carregada! Agora posso analisar seu design para dar sugestões mais precisas sobre complexidade visual e funcionalidades.';
         break;
       case 'site':
-        contextMessage = `🌐 Site "${data.url}" analisado! Identifiquei características que podem servir de referência para sua precificação.`;
+        contextMessage = `🌐 Site "${data?.url}" analisado! Identifiquei características que podem servir de referência para sua precificação.`;
         break;
       case 'doc':
-        contextMessage = `📄 ${data.files.length} documento(s) carregado(s)! Posso usar essas informações para entender melhor os requisitos do projeto.`;
+        contextMessage = `📄 ${data?.files?.length || 0} documento(s) carregado(s)! Posso usar essas informações para entender melhor os requisitos do projeto.`;
         break;
       case 'regional':
-        contextMessage = `📍 Localização identificada: ${data.city}, ${data.state}. Vou ajustar as sugestões de preço baseado no mercado regional.`;
+        contextMessage = `📍 Localização identificada: ${data?.city}, ${data?.state}. Vou ajustar as sugestões de preço baseado no mercado regional.`;
         break;
     }
 
@@ -210,7 +217,7 @@ export default function ChatPage() {
       // Configurações
       pdf.setFont('helvetica');
       let yPosition = 30;
-      const pageWidth = (pdf as any).internal.pageSize.width;
+      const pageWidth = pdf.internal.pageSize.width;
       const margin = 20;
       const lineHeight = 8;
 
@@ -267,7 +274,7 @@ export default function ChatPage() {
 
       // Linhas da tabela
       let rowIndex = 0;
-      Object.entries(projectContext.projectData || {}).forEach(([key, value]: [string, any]) => {
+      Object.entries(projectContext.projectData || {}).forEach(([key, value]: [string, ProjectDataValue]) => {
         const bgColor = rowIndex % 2 === 0 ? [248, 248, 242] : [255, 255, 255];
         pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
         pdf.rect(margin, yPosition, pageWidth - margin * 2, 10, 'F');
@@ -276,7 +283,7 @@ export default function ChatPage() {
         pdf.setFontSize(9);
         pdf.text(key.toUpperCase(), margin + 3, yPosition + 7);
         
-        const specText = pdf.splitTextToSize(value.label || value, 80);
+        const specText = pdf.splitTextToSize(value.label || 'N/A', 80);
         pdf.text(specText, margin + 80, yPosition + 7);
         
         yPosition += 10;
@@ -380,7 +387,7 @@ export default function ChatPage() {
       }
 
       // Salvar com nome mais descritivo
-      const firstValue = Object.values(projectContext.projectData || {})?.[0] as any;
+      const firstValue = Object.values(projectContext.projectData || {})?.[0] as ProjectDataValue;
       const projectName = firstValue?.label || 'projeto';
       pdf.save(`devlator-relatorio-${projectName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.pdf`);
       
@@ -430,10 +437,10 @@ export default function ChatPage() {
             <div className="bg-[#282a36]/50 p-6 rounded-xl border border-[#6272a4]">
               <h3 className="text-lg font-bold text-[#8be9fd] mb-4">Especificações</h3>
               <div className="space-y-2">
-                {Object.entries(projectContext.projectData || {}).map(([key, value]: [string, any]) => (
+                {Object.entries(projectContext.projectData || {}).map(([key, value]: [string, ProjectDataValue]) => (
                   <div key={key} className="flex justify-between items-center">
                     <span className="text-[#f8f8f2] text-sm capitalize">{key}:</span>
-                    <span className="text-[#f1fa8c] text-sm font-semibold">{value.label || value}</span>
+                    <span className="text-[#f1fa8c] text-sm font-semibold">{value.label || 'N/A'}</span>
                   </div>
                 ))}
               </div>

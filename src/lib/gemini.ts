@@ -1,6 +1,18 @@
 // Implementação direta da API Gemini usando fetch
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-finterface ContextData {
+  figma?: { image: string };
+  site?: { url: string; content: string; analysis: string };
+  doc?: { files: File[]; analysis?: string };
+  regional?: { city: string; state: string; country: string; timezone: string };
+  error?: { message: string };
+}
+
+export async function chatWithDevinho(
+  message: string, 
+  context: string[] = [], 
+  contextData?: ContextData
+): Promise<string> {generateContent?key=${GEMINI_API_KEY}`;
 
 export interface ProjectData {
   [key: string]: { value: string; label: string; multiplier: number; description?: string };
@@ -210,7 +222,6 @@ export async function chatWithDevinho(
     
     // Ajustes regionais específicos
     const isCapital = ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Belo Horizonte', 'Salvador', 'Fortaleza', 'Curitiba', 'Porto Alegre', 'Recife', 'Goiânia'].includes(city);
-    const priceModifier = isCapital ? 1.0 : 0.75; // Interior tem preços ~25% menores
     
     detailedContext += `\n🏙️ ANÁLISE REGIONAL:
 - Localização: ${city}, ${state}
@@ -243,7 +254,7 @@ export async function chatWithDevinho(
   
   // Contexto Site - comparação funcional
   if (context.includes('site') && contextData?.site) {
-    const { url, analysis } = contextData.site;
+    const { url } = contextData.site;
     contextPrompt += `SITE DE REFERÊNCIA: Analisando "${url}" como base. `;
     detailedContext += `\n🌐 SITE DE REFERÊNCIA:
 - URL: ${url}

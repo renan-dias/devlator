@@ -11,6 +11,14 @@ export type ChatContextOption = {
   needsModal?: boolean;
 };
 
+interface ContextData {
+  figma?: { image: string };
+  site?: { url: string; content: string; analysis: string };
+  doc?: { files: File[]; analysis?: string };
+  regional?: { city: string; state: string; country: string; timezone: string };
+  error?: { message: string };
+}
+
 export const CONTEXT_OPTIONS: ChatContextOption[] = [
   { 
     label: "Captura do Figma", 
@@ -45,7 +53,7 @@ export const CONTEXT_OPTIONS: ChatContextOption[] = [
 interface ChatContextSelectorProps {
   selected: string[];
   onChange: (values: string[]) => void;
-  onContextData?: (type: string, data: any) => void;
+  onContextData?: (type: string, data: ContextData[keyof ContextData]) => void;
 }
 
 export default function ChatContextSelector({ selected, onChange, onContextData }: ChatContextSelectorProps) {
