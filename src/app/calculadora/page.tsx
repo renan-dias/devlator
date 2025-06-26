@@ -179,6 +179,7 @@ export default function CalculadoraPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string>('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [marketValidation, setMarketValidation] = useState<string>('');
   const [applicableQuestions, setApplicableQuestions] = useState<Question[]>([]);
 
   // Calcular quais perguntas são aplicáveis baseadas nas respostas atuais
@@ -215,6 +216,7 @@ export default function CalculadoraPage() {
       setEstimate(result.estimate);
       setAiReasoning(result.reasoning);
       setAiSuggestions(result.suggestions);
+      setMarketValidation(result.marketValidation);
       
       // Salvar no histórico local
       const historyItem = {
@@ -223,7 +225,8 @@ export default function CalculadoraPage() {
         answers: finalAnswers,
         estimate: result.estimate,
         reasoning: result.reasoning,
-        suggestions: result.suggestions
+        suggestions: result.suggestions,
+        marketValidation: result.marketValidation
       };
       
       const existingHistory = JSON.parse(localStorage.getItem('devlator-history') || '[]');
@@ -242,6 +245,7 @@ export default function CalculadoraPage() {
       const fallbackEstimate = Math.round(baseValue * finalMultiplier);
       setEstimate(fallbackEstimate);
       setAiReasoning('Estimativa calculada com base em parâmetros técnicos e experiência de mercado. Valores podem variar conforme região e especialização.');
+      setMarketValidation('Valor alinhado com práticas do mercado brasileiro. Projetos similares variam entre 70% a 130% dependendo da complexidade e região.');
       setAiSuggestions([
         'Defina bem o escopo antes de começar o desenvolvimento',
         'Use metodologias ágeis para melhor controle do projeto',
@@ -261,6 +265,7 @@ export default function CalculadoraPage() {
     setIsCalculating(false);
     setAiReasoning('');
     setAiSuggestions([]);
+    setMarketValidation('');
     setApplicableQuestions([]);
   };
 
@@ -299,7 +304,7 @@ export default function CalculadoraPage() {
         <div className="space-y-3 mb-6">
           <h3 className="text-xl font-bold text-[#bd93f9]">Resumo das Respostas:</h3>
           {Object.entries(answers).map(([key, value]: [string, any]) => {
-            const question = QUESTION_SETS.find(q => q.id === key);
+            const question = QUESTIONS.find((q: Question) => q.id === key);
             return (
               <div key={key} className="flex justify-between items-center bg-[#282a36]/50 p-3 rounded">
                 <span className="text-[#f8f8f2]">{question?.question}</span>
@@ -310,20 +315,27 @@ export default function CalculadoraPage() {
         </div>
 
         {aiReasoning && (
-          <div className="bg-[#282a36]/50 p-4 rounded-xl mb-6">
-            <h3 className="text-lg font-bold text-[#8be9fd] mb-2">Análise da IA:</h3>
+          <div className="bg-[#282a36]/50 p-4 rounded-xl mb-4">
+            <h3 className="text-lg font-bold text-[#8be9fd] mb-2">Análise Técnica:</h3>
             <p className="text-[#f8f8f2] text-sm leading-relaxed">{aiReasoning}</p>
+          </div>
+        )}
+
+        {marketValidation && (
+          <div className="bg-[#282a36]/50 p-4 rounded-xl mb-4">
+            <h3 className="text-lg font-bold text-[#f1fa8c] mb-2">Validação de Mercado:</h3>
+            <p className="text-[#f8f8f2] text-sm leading-relaxed">{marketValidation}</p>
           </div>
         )}
 
         {aiSuggestions.length > 0 && (
           <div className="bg-[#282a36]/50 p-4 rounded-xl mb-6">
-            <h3 className="text-lg font-bold text-[#f1fa8c] mb-2">Sugestões:</h3>
-            <ul className="space-y-1">
+            <h3 className="text-lg font-bold text-[#50fa7b] mb-2">Sugestões para Otimização:</h3>
+            <ul className="space-y-2">
               {aiSuggestions.map((suggestion, i) => (
-                <li key={i} className="text-[#f8f8f2] text-sm flex items-center gap-2">
-                  <span className="text-[#50fa7b]">→</span>
-                  {suggestion}
+                <li key={i} className="text-[#f8f8f2] text-sm flex items-start gap-3">
+                  <span className="text-[#50fa7b] mt-1">→</span>
+                  <span>{suggestion}</span>
                 </li>
               ))}
             </ul>
@@ -337,60 +349,108 @@ export default function CalculadoraPage() {
           >
             Calcular Novamente
           </button>
-          <button className="px-4 md:px-6 py-2 md:py-3 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all text-sm md:text-base">
+          <button 
+            onClick={() => window.location.href = '/chat'}
+            className="px-4 md:px-6 py-2 md:py-3 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all text-sm md:text-base"
+          >
             Conversar com Devinho
+          </button>
+          <button 
+            onClick={() => {
+              const projectName = prompt('Nome do projeto:');
+              const developerName = prompt('Seu nome/empresa:');
+              if (projectName && developerName) {
+                exportContract(projectName, developerName);
+              }
+            }}
+            className="px-4 md:px-6 py-2 md:py-3 bg-[#ffb86c] text-[#282a36] font-bold rounded-lg hover:bg-[#f1fa8c] transition-all text-sm md:text-base"
+          >
+            Exportar Contrato
           </button>
         </div>
       </section>
     );
   }
 
-  const question = QUESTION_SETS[currentQuestion];
+  if (applicableQuestions.length === 0) {
+    return (
+      <section className="w-full max-w-xl mx-auto p-4 md:p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-4 md:mt-8 text-center">
+        <div className="animate-spin w-12 h-12 md:w-16 md:h-16 border-4 border-[#bd93f9] border-t-transparent rounded-full mx-auto mb-4"></div>
+        <h2 className="text-xl md:text-2xl font-bold text-[#bd93f9]">Carregando perguntas...</h2>
+      </section>
+    );
+  }
+
+  const currentQuestion = applicableQuestions[currentQuestionIndex];
 
   return (
     <section className="w-full max-w-xl mx-auto p-4 md:p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-4 md:mt-8">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs md:text-sm text-[#f1fa8c]">
-            Pergunta {currentQuestion + 1} de {QUESTION_SETS.length}
+            Pergunta {currentQuestionIndex + 1} de {applicableQuestions.length}
           </span>
           <div className="flex space-x-1">
-            {QUESTION_SETS.map((_, i) => (
+            {applicableQuestions.map((_: Question, i: number) => (
               <div 
                 key={i} 
-                className={`w-2 h-2 md:w-3 md:h-3 rounded-full ${i <= currentQuestion ? 'bg-[#50fa7b]' : 'bg-[#6272a4]'}`}
+                className={`w-2 h-2 md:w-3 md:h-3 rounded-full ${i <= currentQuestionIndex ? 'bg-[#50fa7b]' : 'bg-[#6272a4]'}`}
               />
             ))}
           </div>
         </div>
         
+        <div className="mb-4">
+          <span className="text-xs text-[#8be9fd] bg-[#282a36] px-2 py-1 rounded">
+            {currentQuestion.category}
+          </span>
+        </div>
+        
         <h1 className="text-xl md:text-2xl font-bold text-[#bd93f9] mb-4 flex items-center gap-3">
-          {question.icon}
+          {currentQuestion.icon}
           <span className="hidden sm:inline">Calculadora de Preço IA</span>
           <span className="sm:hidden">Calculadora IA</span>
         </h1>
         
-        <h2 className="text-base md:text-xl text-[#f8f8f2] mb-6">{question.question}</h2>
+        <h2 className="text-base md:text-xl text-[#f8f8f2] mb-6">{currentQuestion.question}</h2>
       </div>
 
       <div className="space-y-3">
-        {question.options.map((option) => (
+        {currentQuestion.options.map((option: QuestionOption) => (
           <button
             key={option.value}
             onClick={() => handleAnswer(option)}
             className="w-full p-3 md:p-4 text-left bg-[#282a36] hover:bg-[#6272a4] rounded-lg border border-[#44475a] transition-all hover:border-[#bd93f9] group"
           >
-            <div className="flex justify-between items-center">
-              <span className="text-sm md:text-base text-[#f8f8f2] group-hover:text-[#bd93f9] transition-colors">
-                {option.label}
-              </span>
-              <span className="text-xs text-[#f1fa8c]">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <span className="text-sm md:text-base text-[#f8f8f2] group-hover:text-[#bd93f9] transition-colors block">
+                  {option.label}
+                </span>
+                {option.description && (
+                  <span className="text-xs text-[#6272a4] mt-1 block">
+                    {option.description}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-[#f1fa8c] ml-2">
                 {option.multiplier}x
               </span>
             </div>
           </button>
         ))}
       </div>
+
+      {currentQuestionIndex > 0 && (
+        <div className="mt-6 flex justify-center">
+          <button 
+            onClick={goToPreviousQuestion}
+            className="px-4 py-2 text-sm bg-[#6272a4] text-[#f8f8f2] rounded-lg hover:bg-[#44475a] transition-all"
+          >
+            ← Voltar
+          </button>
+        </div>
+      )}
     </section>
   );
 }
