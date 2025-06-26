@@ -2,13 +2,24 @@
 import { useState, useEffect } from "react";
 import ChatHistory, { addMessage, ChatMessage } from "@/components/ChatHistory";
 import ChatContextSelector from "@/components/ChatContextSelector";
-import { FaPaperPlane, FaRobot } from "react-icons/fa";
+import { FaPaperPlane, FaRobot, FaCalculator, FaFilePdf, FaEye } from "react-icons/fa";
+
+interface ProjectContext {
+  projectData: any;
+  estimate: number;
+  reasoning: string;
+  marketValidation: string;
+  suggestions: string[];
+}
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
   const [context, setContext] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [projectContext, setProjectContext] = useState<ProjectContext | null>(null);
+  const [showPricingView, setShowPricingView] = useState(false);
+  const [canShowPricing, setCanShowPricing] = useState(false);
 
   useEffect(() => {
     // Carregar mensagens do localStorage
@@ -24,6 +35,20 @@ export default function ChatPage() {
       return [];
     };
     setMessages(loadMessages());
+
+    // Verificar se há contexto da calculadora
+    if (typeof window !== 'undefined') {
+      const contextData = localStorage.getItem('devlator-chat-context');
+      if (contextData) {
+        try {
+          const parsedContext = JSON.parse(contextData);
+          setProjectContext(parsedContext);
+          setContext(['calculadora']); // Adicionar contexto automaticamente
+        } catch (error) {
+          console.error('Erro ao carregar contexto:', error);
+        }
+      }
+    }
   }, []);
 
   const sendMessage = async () => {
@@ -46,7 +71,26 @@ export default function ChatPage() {
 
     try {
       const { chatWithDevinho } = await import('@/lib/gemini');
-      const response = await chatWithDevinho(input.trim(), context);
+      
+      // Incluir contexto da calculadora se disponível
+      let enhancedMessage = input.trim();
+      if (projectContext) {
+        enhancedMessage += `\n\nContexto do projeto da calculadora:
+        Estimativa atual: R$ ${projectContext.estimate?.toLocaleString('pt-BR')}
+        Dados do projeto: ${JSON.stringify(projectContext.projectData, null, 2)}`;
+      }
+      
+      const response = await chatWithDevinho(enhancedMessage, context, projectContext?.projectData);
+      
+      // Detectar se a IA coletou informações suficientes para gerar precificação
+      const hasEnoughInfo = response.toLowerCase().includes('precificação') || 
+                           response.toLowerCase().includes('estimativa') ||
+                           response.toLowerCase().includes('orçamento') ||
+                           (messages.length > 3 && projectContext);
+      
+      if (hasEnoughInfo && !canShowPricing) {
+        setCanShowPricing(true);
+      }
       
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),

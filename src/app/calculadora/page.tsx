@@ -26,51 +26,174 @@ const QUESTIONS: Question[] = [
     id: "tipo",
     question: "Que tipo de projeto você quer desenvolver?",
     icon: <FaCode className="text-[#bd93f9]" />,
-    category: "Básica",
+    category: "Projeto",
     options: [
-      { value: "website", label: "Website/Landing Page", multiplier: 1, description: "Site institucional ou página de venda" },
-      { value: "webapp", label: "Aplicação Web Completa", multiplier: 2.5, description: "Sistema web com autenticação e funcionalidades" },
-      { value: "mobile", label: "App Mobile", multiplier: 3, description: "Aplicativo para iOS/Android" },
-      { value: "ecommerce", label: "E-commerce", multiplier: 4, description: "Loja virtual completa" },
-      { value: "sistema", label: "Sistema Complexo", multiplier: 5, description: "ERP, CRM ou sistema empresarial" }
+      { value: "landing", label: "Landing Page Simples", multiplier: 0.3, description: "Uma página com formulário de contato" },
+      { value: "website", label: "Website Institucional", multiplier: 0.6, description: "5-10 páginas, sem funcionalidades complexas" },
+      { value: "blog", label: "Blog/Portal de Conteúdo", multiplier: 0.8, description: "Sistema de posts, categorias, comentários" },
+      { value: "webapp", label: "Aplicação Web", multiplier: 1.5, description: "Sistema com login, CRUD, dashboards" },
+      { value: "mobile", label: "App Mobile", multiplier: 2.2, description: "Aplicativo nativo ou híbrido" },
+      { value: "ecommerce", label: "E-commerce", multiplier: 2.8, description: "Loja virtual com pagamentos" },
+      { value: "sistema", label: "Sistema Empresarial", multiplier: 4.5, description: "ERP, CRM, automação complexa" },
+      { value: "api", label: "API/Backend", multiplier: 1.2, description: "Serviços e APIs para integração" }
     ]
   },
+
+  {
+    id: "escopo",
+    question: "Qual o tamanho aproximado do projeto?",
+    icon: <FaChartLine className="text-[#50fa7b]" />,
+    category: "Escopo",
+    options: [
+      { value: "micro", label: "Micro (1-3 dias)", multiplier: 0.2, description: "Projeto muito pequeno, ajustes simples" },
+      { value: "pequeno", label: "Pequeno (1-2 semanas)", multiplier: 0.5, description: "Funcionalidades básicas" },
+      { value: "medio", label: "Médio (1-2 meses)", multiplier: 1, description: "Projeto com várias funcionalidades" },
+      { value: "grande", label: "Grande (3-6 meses)", multiplier: 2, description: "Sistema complexo, múltiplos módulos" },
+      { value: "muito_grande", label: "Muito Grande (6+ meses)", multiplier: 4, description: "Projeto de grande escala" }
+    ]
+  },
+
+  {
+    id: "design",
+    question: "Como será o design do projeto?",
+    icon: <FaDesktop className="text-[#ff79c6]" />,
+    category: "Design",
+    options: [
+      { value: "pronto", label: "Design já pronto (Figma/PSD)", multiplier: 0.7, description: "Layouts completos fornecidos" },
+      { value: "template", label: "Adaptar template existente", multiplier: 0.8, description: "Customizar template pronto" },
+      { value: "simples", label: "Design simples/básico", multiplier: 1, description: "Layout clean e funcional" },
+      { value: "customizado", label: "Design customizado", multiplier: 1.4, description: "Design único criado do zero" },
+      { value: "complexo", label: "Design complexo/animado", multiplier: 1.8, description: "Animações, interações avançadas" }
+    ]
+  },
+
+  {
+    id: "responsividade",
+    question: "Qual nível de responsividade é necessário?",
+    icon: <FaMobile className="text-[#8be9fd]" />,
+    category: "Design",
+    condition: (answers) => answers.tipo?.value !== "api",
+    options: [
+      { value: "desktop", label: "Apenas Desktop", multiplier: 0.8, description: "Otimizado só para desktop" },
+      { value: "basica", label: "Responsivo Básico", multiplier: 1, description: "Mobile, tablet e desktop" },
+      { value: "avancada", label: "Responsivo Avançado", multiplier: 1.3, description: "Otimizado para todos os dispositivos" },
+      { value: "mobile_first", label: "Mobile First", multiplier: 1.2, description: "Prioridade para dispositivos móveis" }
+    ]
+  },
+  // Funcionalidades específicas
+  {
+    id: "autenticacao",
+    question: "O projeto precisa de sistema de login/usuários?",
+    icon: <FaShieldAlt className="text-[#f1fa8c]" />,
+    category: "Funcionalidades",
+    condition: (answers) => answers.tipo?.value !== "landing" && answers.tipo?.value !== "api",
+    options: [
+      { value: "nao", label: "Não precisa", multiplier: 0.8, description: "Site estático ou sem autenticação" },
+      { value: "simples", label: "Login simples", multiplier: 1.1, description: "Email/senha básico" },
+      { value: "social", label: "Login social (Google, Facebook)", multiplier: 1.3, description: "Integração com redes sociais" },
+      { value: "completo", label: "Sistema completo de usuários", multiplier: 1.6, description: "Perfis, permissões, recuperação de senha" },
+      { value: "enterprise", label: "Autenticação enterprise", multiplier: 2.2, description: "SSO, LDAP, múltiplos níveis" }
+    ]
+  },
+
+  {
+    id: "integracao",
+    question: "Quantas integrações externas são necessárias?",
+    icon: <FaCog className="text-[#ffb86c]" />,
+    category: "Funcionalidades",
+    options: [
+      { value: "nenhuma", label: "Nenhuma integração", multiplier: 0.7, description: "Sistema isolado" },
+      { value: "poucas", label: "1-2 integrações simples", multiplier: 1, description: "APIs básicas" },
+      { value: "varias", label: "3-5 integrações", multiplier: 1.4, description: "Pagamento, email, redes sociais" },
+      { value: "muitas", label: "6+ integrações", multiplier: 2, description: "ERPs, CRMs, múltiplas APIs" },
+      { value: "complexas", label: "Integrações complexas", multiplier: 2.8, description: "Sincronização em tempo real" }
+    ]
+  },
+
   {
     id: "complexidade",
     question: "Qual a complexidade das funcionalidades?",
     icon: <FaRocket className="text-[#50fa7b]" />,
-    category: "Básica",
+    category: "Técnico",
     options: [
-      { value: "simples", label: "Simples (CRUD básico)", multiplier: 1, description: "Operações básicas de dados" },
-      { value: "media", label: "Média (Integrações, APIs)", multiplier: 1.8, description: "APIs externas, pagamentos" },
-      { value: "complexa", label: "Complexa (IA, Machine Learning)", multiplier: 3, description: "Inteligência artificial, análise de dados" },
-      { value: "muito_complexa", label: "Muito Complexa (Blockchain, IoT)", multiplier: 4.5, description: "Tecnologias emergentes" }
+      { value: "basico", label: "Básico (CRUD simples)", multiplier: 0.8, description: "Operações básicas de dados" },
+      { value: "intermediario", label: "Intermediário", multiplier: 1.2, description: "Relatórios, filtros, busca" },
+      { value: "avancado", label: "Avançado", multiplier: 1.8, description: "Dashboards, analytics, automação" },
+      { value: "ia", label: "Com IA/Machine Learning", multiplier: 2.5, description: "Algoritmos de ML, IA generativa" },
+      { value: "blockchain", label: "Blockchain/Web3", multiplier: 3.2, description: "Smart contracts, DeFi" }
     ]
   },
 
-  // Equipe e Experiência
+  // Banco de dados - Condicionais
+  {
+    id: "banco",
+    question: "Que tipo de banco de dados será usado?",
+    icon: <FaDatabase className="text-[#8be9fd]" />,
+    category: "Técnico",
+    condition: (answers) => answers.tipo?.value !== "landing",
+    options: [
+      { value: "simples", label: "Arquivo local/JSON", multiplier: 0.5, description: "Dados simples, sem banco" },
+      { value: "sqlite", label: "SQLite", multiplier: 0.7, description: "Banco leve e simples" },
+      { value: "mysql", label: "MySQL/PostgreSQL", multiplier: 1, description: "Banco relacional tradicional" },
+      { value: "nosql", label: "NoSQL (MongoDB, Firebase)", multiplier: 1.2, description: "Banco não-relacional" },
+      { value: "multiplo", label: "Múltiplos bancos", multiplier: 1.8, description: "Arquitetura de dados complexa" },
+      { value: "bigdata", label: "Big Data (Redis, Elasticsearch)", multiplier: 2.5, description: "Grandes volumes de dados" }
+    ]
+  },
+
+  // Experiência e conhecimento
+  {
+    id: "tecnologia_definida",
+    question: "Já tem as tecnologias do projeto definidas?",
+    icon: <FaGraduationCap className="text-[#f1fa8c]" />,
+    category: "Planejamento",
+    options: [
+      { value: "sim_conheco", label: "Sim, e eu domino", multiplier: 0.8, description: "Tecnologias que você já usa" },
+      { value: "sim_nao_conheco", label: "Sim, mas preciso aprender", multiplier: 1.5, description: "Tecnologias novas para você" },
+      { value: "nao", label: "Não, preciso definir", multiplier: 1.1, description: "Escolher a melhor tecnologia" },
+      { value: "cliente_exige", label: "Cliente exige tecnologia específica", multiplier: 1.3, description: "Tecnologia imposta pelo cliente" }
+    ]
+  },
+
+  {
+    id: "experiencia_tipo",
+    question: "Qual sua experiência com este tipo de projeto?",
+    icon: <FaGraduationCap className="text-[#bd93f9]" />,
+    category: "Experiência",
+    options: [
+      { value: "primeiro", label: "Primeiro projeto do tipo", multiplier: 1.8, description: "Nunca fiz algo similar" },
+      { value: "pouca", label: "Pouca experiência", multiplier: 1.4, description: "1-2 projetos similares" },
+      { value: "intermediaria", label: "Experiência intermediária", multiplier: 1.1, description: "3-5 projetos similares" },
+      { value: "experiente", label: "Muito experiente", multiplier: 0.9, description: "Mais de 10 projetos similares" },
+      { value: "especialista", label: "Especialista", multiplier: 0.7, description: "Expert neste tipo de projeto" }
+    ]
+  },
+
+  // Equipe e Recursos
   {
     id: "equipe",
     question: "Quantas pessoas trabalharão no projeto?",
     icon: <FaUsers className="text-[#ffb86c]" />,
-    category: "Equipe",
+    category: "Recursos",
     options: [
-      { value: "solo", label: "Só eu", multiplier: 1, description: "Desenvolvedor solo" },
-      { value: "dupla", label: "2-3 pessoas", multiplier: 0.8, description: "Pequena equipe" },
-      { value: "equipe", label: "4-6 pessoas", multiplier: 0.6, description: "Equipe média" },
-      { value: "grande", label: "Mais de 6 pessoas", multiplier: 0.4, description: "Equipe grande" }
+      { value: "solo", label: "Só eu (freelancer)", multiplier: 1, description: "Trabalho individual" },
+      { value: "dupla", label: "Dupla (2 pessoas)", multiplier: 0.85, description: "Colaboração em dupla" },
+      { value: "pequena", label: "Equipe pequena (3-4)", multiplier: 0.75, description: "Time pequeno" },
+      { value: "media", label: "Equipe média (5-8)", multiplier: 0.65, description: "Time estruturado" },
+      { value: "grande", label: "Equipe grande (9+)", multiplier: 0.55, description: "Time grande/empresa" }
     ]
   },
+
   {
-    id: "experiencia",
-    question: "Qual seu nível de experiência com as tecnologias do projeto?",
-    icon: <FaGraduationCap className="text-[#f1fa8c]" />,
-    category: "Equipe",
+    id: "dedicacao",
+    question: "Qual sua dedicação ao projeto?",
+    icon: <FaClock className="text-[#ff79c6]" />,
+    category: "Recursos",
     options: [
-      { value: "iniciante", label: "Iniciante", multiplier: 2, description: "Primeiro projeto com essas tecnologias" },
-      { value: "intermediario", label: "Intermediário", multiplier: 1.5, description: "Alguma experiência prévia" },
-      { value: "avancado", label: "Avançado", multiplier: 1, description: "Muita experiência" },
-      { value: "especialista", label: "Especialista", multiplier: 0.8, description: "Expert na tecnologia" }
+      { value: "part_time", label: "Part-time (20h/semana)", multiplier: 1.3, description: "Trabalho paralelo a outros projetos" },
+      { value: "meio_periodo", label: "Meio período (25h/semana)", multiplier: 1.1, description: "Dedicação parcial" },
+      { value: "full_time", label: "Full-time (40h/semana)", multiplier: 1, description: "Dedicação integral" },
+      { value: "intensivo", label: "Intensivo (50h+/semana)", multiplier: 1.2, description: "Ritmo acelerado para prazo apertado" }
     ]
   },
 
@@ -81,27 +204,28 @@ const QUESTIONS: Question[] = [
     icon: <FaClock className="text-[#ff79c6]" />,
     category: "Prazo",
     options: [
-      { value: "urgente", label: "Muito urgente (1-2 semanas)", multiplier: 3, description: "Trabalho 24/7, stress alto" },
-      { value: "rapido", label: "Rápido (1 mês)", multiplier: 1.8, description: "Ritmo acelerado" },
-      { value: "normal", label: "Normal (2-3 meses)", multiplier: 1, description: "Desenvolvimento saudável" },
-      { value: "flexivel", label: "Flexível (mais de 3 meses)", multiplier: 0.8, description: "Sem pressa" }
+      { value: "urgentissimo", label: "Urgentíssimo (1 semana)", multiplier: 2.5, description: "Rush extremo, trabalho 24/7" },
+      { value: "urgente", label: "Muito urgente (2-3 semanas)", multiplier: 1.8, description: "Prazo apertado, stress alto" },
+      { value: "rapido", label: "Rápido (1-2 meses)", multiplier: 1.3, description: "Ritmo acelerado" },
+      { value: "normal", label: "Normal (3-4 meses)", multiplier: 1, description: "Desenvolvimento saudável" },
+      { value: "flexivel", label: "Flexível (5+ meses)", multiplier: 0.85, description: "Sem pressa, qualidade primeiro" }
     ]
   },
 
-  // Tecnologia - Condicionais
   {
-    id: "banco",
-    question: "Que tipo de banco de dados será usado?",
-    icon: <FaDatabase className="text-[#8be9fd]" />,
-    category: "Tecnologia",
-    condition: (answers) => answers.tipo?.value !== "website",
+    id: "flexibilidade_escopo",
+    question: "O escopo pode mudar durante o projeto?",
+    icon: <FaCog className="text-[#8be9fd]" />,
+    category: "Prazo",
     options: [
-      { value: "simples", label: "Arquivo local/JSON", multiplier: 0.5, description: "Dados simples" },
-      { value: "sql", label: "Banco SQL (MySQL, PostgreSQL)", multiplier: 1, description: "Banco relacional" },
-      { value: "nosql", label: "NoSQL (MongoDB, Firebase)", multiplier: 1.2, description: "Banco não-relacional" },
-      { value: "multiplo", label: "Múltiplos bancos", multiplier: 1.8, description: "Arquitetura complexa" }
+      { value: "fixo", label: "Escopo fixo e bem definido", multiplier: 0.9, description: "Sem mudanças esperadas" },
+      { value: "pequenas", label: "Pequenos ajustes esperados", multiplier: 1, description: "Mudanças menores" },
+      { value: "moderadas", label: "Mudanças moderadas", multiplier: 1.2, description: "Cliente ainda decidindo detalhes" },
+      { value: "grandes", label: "Grandes mudanças possíveis", multiplier: 1.5, description: "Cliente indeciso, muito iterativo" },
+      { value: "indefinido", label: "Escopo muito indefinido", multiplier: 1.8, description: "Cliente não sabe o que quer" }
     ]
   },
+  // Tecnologia específica
   {
     id: "plataforma",
     question: "Em quais plataformas o app será disponibilizado?",
@@ -109,10 +233,27 @@ const QUESTIONS: Question[] = [
     category: "Tecnologia",
     condition: (answers) => answers.tipo?.value === "mobile",
     options: [
-      { value: "android", label: "Apenas Android", multiplier: 1, description: "Uma plataforma" },
-      { value: "ios", label: "Apenas iOS", multiplier: 1.2, description: "Plataforma Apple" },
-      { value: "ambos", label: "Android + iOS", multiplier: 1.8, description: "Multiplataforma" },
-      { value: "hibrido", label: "App Híbrido", multiplier: 1.3, description: "React Native, Flutter" }
+      { value: "android", label: "Apenas Android", multiplier: 0.8, description: "Uma plataforma, Java/Kotlin" },
+      { value: "ios", label: "Apenas iOS", multiplier: 1, description: "Swift/Objective-C" },
+      { value: "ambos_nativo", label: "Android + iOS (Nativo)", multiplier: 1.8, description: "Duas bases de código" },
+      { value: "react_native", label: "React Native", multiplier: 1.2, description: "Multiplataforma com RN" },
+      { value: "flutter", label: "Flutter", multiplier: 1.1, description: "Multiplataforma com Flutter" },
+      { value: "hibrido", label: "App Híbrido (Ionic)", multiplier: 0.9, description: "WebView + tecnologias web" }
+    ]
+  },
+
+  {
+    id: "cms",
+    question: "Precisa de CMS (painel administrativo)?",
+    icon: <FaCog className="text-[#ffb86c]" />,
+    category: "Funcionalidades",
+    condition: (answers) => answers.tipo?.value === "website" || answers.tipo?.value === "blog" || answers.tipo?.value === "ecommerce",
+    options: [
+      { value: "nao", label: "Não precisa", multiplier: 0.8, description: "Conteúdo estático" },
+      { value: "simples", label: "CMS simples", multiplier: 1.2, description: "Edição básica de conteúdo" },
+      { value: "wordpress", label: "WordPress customizado", multiplier: 1, description: "CMS consolidado" },
+      { value: "headless", label: "CMS Headless", multiplier: 1.4, description: "Strapi, Contentful" },
+      { value: "customizado", label: "CMS totalmente customizado", multiplier: 1.8, description: "Painel feito do zero" }
     ]
   },
 
@@ -124,23 +265,41 @@ const QUESTIONS: Question[] = [
     category: "Infraestrutura",
     condition: (answers) => answers.tipo?.value !== "mobile",
     options: [
-      { value: "compartilhada", label: "Hospedagem compartilhada", multiplier: 0.8, description: "Básica e barata" },
-      { value: "vps", label: "VPS/Cloud básico", multiplier: 1, description: "Servidor virtual" },
-      { value: "aws", label: "AWS/Azure/GCP", multiplier: 1.5, description: "Cloud profissional" },
-      { value: "kubernetes", label: "Kubernetes/Docker", multiplier: 2, description: "Infraestrutura avançada" }
+      { value: "compartilhada", label: "Hospedagem compartilhada", multiplier: 0.7, description: "Básica, limitações" },
+      { value: "vps", label: "VPS básico", multiplier: 0.9, description: "Servidor virtual simples" },
+      { value: "cloud_basico", label: "Cloud básico (Vercel, Netlify)", multiplier: 1, description: "Deploy automático" },
+      { value: "aws_basico", label: "AWS/Azure básico", multiplier: 1.2, description: "Cloud profissional" },
+      { value: "kubernetes", label: "Kubernetes/Docker", multiplier: 1.8, description: "Infraestrutura avançada" },
+      { value: "multicloud", label: "Multi-cloud/Enterprise", multiplier: 2.5, description: "Infraestrutura complexa" }
     ]
   },
+
+  {
+    id: "performance",
+    question: "Qual o nível de performance necessário?",
+    icon: <FaRocket className="text-[#50fa7b]" />,
+    category: "Infraestrutura",
+    options: [
+      { value: "basica", label: "Performance básica", multiplier: 0.9, description: "Uso interno, poucos usuários" },
+      { value: "boa", label: "Boa performance", multiplier: 1, description: "Site público padrão" },
+      { value: "alta", label: "Alta performance", multiplier: 1.3, description: "Muitos acessos simultâneos" },
+      { value: "extrema", label: "Performance extrema", multiplier: 1.8, description: "Milhões de usuários, CDN" },
+      { value: "real_time", label: "Tempo real", multiplier: 2.2, description: "WebSockets, updates instantâneos" }
+    ]
+  },
+
   {
     id: "seguranca",
     question: "Qual o nível de segurança necessário?",
     icon: <FaShieldAlt className="text-[#50fa7b]" />,
     category: "Infraestrutura",
-    condition: (answers) => answers.tipo?.value === "webapp" || answers.tipo?.value === "sistema" || answers.tipo?.value === "ecommerce",
+    condition: (answers) => answers.tipo?.value === "webapp" || answers.tipo?.value === "sistema" || answers.tipo?.value === "ecommerce" || answers.tipo?.value === "api",
     options: [
       { value: "basica", label: "Segurança básica", multiplier: 1, description: "HTTPS, autenticação simples" },
-      { value: "media", label: "Segurança média", multiplier: 1.5, description: "2FA, criptografia" },
-      { value: "alta", label: "Segurança alta", multiplier: 2.5, description: "Auditoria, compliance" },
-      { value: "militar", label: "Nível militar", multiplier: 4, description: "Máxima segurança" }
+      { value: "media", label: "Segurança média", multiplier: 1.3, description: "2FA, criptografia, logs" },
+      { value: "alta", label: "Segurança alta", multiplier: 1.8, description: "Compliance, auditoria" },
+      { value: "bancaria", label: "Nível bancário", multiplier: 2.5, description: "PCI DSS, máxima segurança" },
+      { value: "governamental", label: "Nível governamental", multiplier: 3, description: "Normas rígidas, certificações" }
     ]
   },
 
@@ -152,24 +311,84 @@ const QUESTIONS: Question[] = [
     category: "E-commerce",
     condition: (answers) => answers.tipo?.value === "ecommerce",
     options: [
-      { value: "basico", label: "Cartão + PIX", multiplier: 1, description: "Pagamentos básicos" },
-      { value: "completo", label: "Múltiplos métodos", multiplier: 1.8, description: "Boleto, carteiras digitais" },
-      { value: "internacional", label: "Pagamentos internacionais", multiplier: 2.5, description: "PayPal, Stripe global" },
-      { value: "crypto", label: "Inclui criptomoedas", multiplier: 3, description: "Bitcoin, Ethereum" }
+      { value: "basico", label: "Cartão + PIX", multiplier: 1, description: "Pagamentos essenciais" },
+      { value: "completo", label: "Cartão + PIX + Boleto", multiplier: 1.3, description: "Métodos tradicionais" },
+      { value: "digital", label: "+ Carteiras digitais", multiplier: 1.6, description: "PayPal, Apple Pay, Google Pay" },
+      { value: "internacional", label: "Pagamentos internacionais", multiplier: 2, description: "Stripe, PayPal global" },
+      { value: "crypto", label: "Inclui criptomoedas", multiplier: 2.5, description: "Bitcoin, Ethereum" }
     ]
   },
 
-  // Manutenção
+  {
+    id: "produtos",
+    question: "Quantos produtos/categorias aproximadamente?",
+    icon: <FaCode className="text-[#bd93f9]" />,
+    category: "E-commerce",
+    condition: (answers) => answers.tipo?.value === "ecommerce",
+    options: [
+      { value: "poucos", label: "Até 50 produtos", multiplier: 0.8, description: "Catálogo pequeno" },
+      { value: "medio", label: "50-500 produtos", multiplier: 1, description: "Loja média" },
+      { value: "grande", label: "500-5000 produtos", multiplier: 1.4, description: "Catálogo extenso" },
+      { value: "marketplace", label: "5000+ produtos", multiplier: 2, description: "Marketplace/grande loja" },
+      { value: "digital", label: "Produtos digitais", multiplier: 1.2, description: "Downloads, assinaturas" }
+    ]
+  },
+
+  // Manutenção e pós-entrega
+  {
+    id: "documentacao",
+    question: "Qual nível de documentação é necessário?",
+    icon: <FaCode className="text-[#8be9fd]" />,
+    category: "Entrega",
+    options: [
+      { value: "minima", label: "Documentação mínima", multiplier: 0.9, description: "README básico" },
+      { value: "basica", label: "Documentação básica", multiplier: 1, description: "Como usar e instalar" },
+      { value: "completa", label: "Documentação completa", multiplier: 1.2, description: "Manual técnico detalhado" },
+      { value: "tecnica", label: "Documentação técnica avançada", multiplier: 1.4, description: "Arquitetura, APIs, deploy" },
+      { value: "usuario", label: "Manual do usuário incluído", multiplier: 1.3, description: "Documentação para cliente final" }
+    ]
+  },
+
+  {
+    id: "testes",
+    question: "Qual cobertura de testes é necessária?",
+    icon: <FaShieldAlt className="text-[#50fa7b]" />,
+    category: "Qualidade",
+    options: [
+      { value: "nenhum", label: "Sem testes automatizados", multiplier: 0.8, description: "Só testes manuais" },
+      { value: "basicos", label: "Testes básicos", multiplier: 1, description: "Principais funcionalidades" },
+      { value: "unitarios", label: "Testes unitários", multiplier: 1.2, description: "Cobertura de código" },
+      { value: "completos", label: "Testes completos", multiplier: 1.5, description: "Unit + Integration + E2E" },
+      { value: "tdd", label: "TDD/BDD completo", multiplier: 1.8, description: "Desenvolvimento orientado a testes" }
+    ]
+  },
+
   {
     id: "manutencao",
     question: "Você fará a manutenção do projeto?",
     icon: <FaCog className="text-[#ffb86c]" />,
     category: "Manutenção",
     options: [
-      { value: "nao", label: "Não, só desenvolvimento", multiplier: 1, description: "Entrega e tchau" },
-      { value: "basica", label: "Manutenção básica (3 meses)", multiplier: 1.2, description: "Suporte inicial" },
-      { value: "completa", label: "Manutenção completa (1 ano)", multiplier: 1.8, description: "Suporte extenso" },
-      { value: "permanente", label: "Manutenção permanente", multiplier: 2.5, description: "Parceria de longo prazo" }
+      { value: "nao", label: "Não, só desenvolvimento", multiplier: 1, description: "Entrega e encerramento" },
+      { value: "garantia", label: "Garantia de 30-90 dias", multiplier: 1.1, description: "Correções de bugs" },
+      { value: "basica", label: "Manutenção básica (6 meses)", multiplier: 1.3, description: "Updates e suporte" },
+      { value: "completa", label: "Manutenção completa (1 ano)", multiplier: 1.6, description: "Suporte e melhorias" },
+      { value: "permanente", label: "Parceria permanente", multiplier: 2, description: "Evolução contínua" }
+    ]
+  },
+
+  // Localização/região
+  {
+    id: "regiao",
+    question: "Em qual região você está localizado?",
+    icon: <FaCode className="text-[#f1fa8c]" />,
+    category: "Mercado",
+    options: [
+      { value: "interior", label: "Interior/Cidades menores", multiplier: 0.7, description: "Custo de vida menor" },
+      { value: "capital", label: "Capitais/Região metropolitana", multiplier: 1, description: "Mercado padrão" },
+      { value: "sp_rj", label: "São Paulo/Rio de Janeiro", multiplier: 1.3, description: "Mercado premium" },
+      { value: "sul", label: "Região Sul (tech hubs)", multiplier: 1.2, description: "Vale dos Sinos, etc" },
+      { value: "remoto", label: "Trabalho 100% remoto", multiplier: 1.1, description: "Cliente pode ser de qualquer lugar" }
     ]
   }
 ];
@@ -249,7 +468,7 @@ export default function CalculadoraPage() {
     } catch (error) {
       console.error('Erro ao calcular estimativa:', error);
       // Fallback calculation mais sofisticado
-      const baseValue = 3000;
+      const baseValue = 1500; // Valor base mais realista
       let finalMultiplier = 1;
       
       Object.values(finalAnswers).forEach((answer: any) => {
@@ -431,10 +650,21 @@ https://devlator.com
             Calcular Novamente
           </button>
           <button 
-            onClick={() => window.location.href = '/chat'}
+            onClick={() => {
+              // Salvar contexto para o chat
+              const chatContext = {
+                projectData: answers,
+                estimate: estimate,
+                reasoning: aiReasoning,
+                marketValidation: marketValidation,
+                suggestions: aiSuggestions
+              };
+              localStorage.setItem('devlator-chat-context', JSON.stringify(chatContext));
+              window.location.href = '/chat';
+            }}
             className="px-4 md:px-6 py-2 md:py-3 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all text-sm md:text-base"
           >
-            Conversar com Devinho
+            Refinar no Chat
           </button>
           <button 
             onClick={() => {

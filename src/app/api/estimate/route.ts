@@ -121,7 +121,7 @@ SUGESTOES:
 }
 
 function calculateFallbackEstimate(projectData: any): number {
-  const baseValue = 3500;
+  const baseValue = 1500; // Valor base mais realista para o mercado brasileiro
   let multiplier = 1;
   
   Object.values(projectData).forEach((answer: any) => {
