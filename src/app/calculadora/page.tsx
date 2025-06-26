@@ -1,15 +1,120 @@
 'use client';
 import { useState, useEffect } from "react";
-import { FaRocket, FaCode, FaUsers, FaClock, FaDatabase, FaMobile, FaDesktop, FaCloud, FaServer, FaShieldAlt, FaCog, FaGraduationCap, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
+import { 
+  FaRocket, FaCode, FaUsers, FaClock, FaDatabase, FaMobile, FaDesktop, 
+  FaCloud, FaServer, FaShieldAlt, FaCog, FaGraduationCap, FaMoneyBillWave, 
+  FaChartLine, FaGlobe, FaNewspaper, FaLaptopCode, FaShoppingCart, 
+  FaBuilding, FaPlug, FaHourglassHalf, FaCalendarAlt, FaCalendarWeek,
+  FaCalendarDay, FaPaintBrush, FaFileImage, FaTabletAlt, FaLock,
+  FaUserShield, FaKey, FaNetworkWired, FaLink, FaBrain, FaRobot,
+  FaCoins, FaCreditCard, FaBox, FaStore, FaDownload, FaFileAlt,
+  FaBug, FaFlask, FaTools, FaMapMarkerAlt, FaUserTie, FaUserFriends
+} from "react-icons/fa";
 
 interface QuestionOption {
   value: string;
   label: string;
   multiplier: number;
   description?: string;
+  icon?: React.ReactElement;
 }
 
 import React from 'react';
+
+// Função para obter ícone baseado no tipo de opção
+const getOptionIcon = (questionId: string, optionValue: string): React.ReactElement => {
+  const iconMap: Record<string, Record<string, React.ReactElement>> = {
+    tipo: {
+      landing: <FaGlobe className="text-[#8be9fd]" />,
+      website: <FaDesktop className="text-[#bd93f9]" />,
+      blog: <FaNewspaper className="text-[#f1fa8c]" />,
+      webapp: <FaLaptopCode className="text-[#50fa7b]" />,
+      mobile: <FaMobile className="text-[#ff79c6]" />,
+      ecommerce: <FaShoppingCart className="text-[#ffb86c]" />,
+      sistema: <FaBuilding className="text-[#ff5555]" />,
+      api: <FaPlug className="text-[#6272a4]" />
+    },
+    escopo: {
+      micro: <FaHourglassHalf className="text-[#8be9fd]" />,
+      pequeno: <FaCalendarDay className="text-[#50fa7b]" />,
+      medio: <FaCalendarWeek className="text-[#f1fa8c]" />,
+      grande: <FaCalendarAlt className="text-[#ffb86c]" />,
+      muito_grande: <FaRocket className="text-[#ff79c6]" />
+    },
+    design: {
+      pronto: <FaFileImage className="text-[#50fa7b]" />,
+      template: <FaPaintBrush className="text-[#8be9fd]" />,
+      simples: <FaDesktop className="text-[#f1fa8c]" />,
+      customizado: <FaCode className="text-[#bd93f9]" />,
+      complexo: <FaRocket className="text-[#ff79c6]" />
+    },
+    responsividade: {
+      desktop: <FaDesktop className="text-[#6272a4]" />,
+      basica: <FaTabletAlt className="text-[#8be9fd]" />,
+      avancada: <FaMobile className="text-[#50fa7b]" />,
+      mobile_first: <FaMobile className="text-[#ff79c6]" />
+    },
+    autenticacao: {
+      nao: <FaLock className="text-[#6272a4]" />,
+      simples: <FaKey className="text-[#8be9fd]" />,
+      social: <FaUserFriends className="text-[#bd93f9]" />,
+      completo: <FaUserShield className="text-[#50fa7b]" />,
+      enterprise: <FaShieldAlt className="text-[#ff79c6]" />
+    },
+    integracao: {
+      nenhuma: <FaCode className="text-[#6272a4]" />,
+      poucas: <FaLink className="text-[#8be9fd]" />,
+      varias: <FaNetworkWired className="text-[#f1fa8c]" />,
+      muitas: <FaPlug className="text-[#ffb86c]" />,
+      complexas: <FaRocket className="text-[#ff79c6]" />
+    },
+    complexidade: {
+      basico: <FaCode className="text-[#8be9fd]" />,
+      intermediario: <FaChartLine className="text-[#50fa7b]" />,
+      avancado: <FaRocket className="text-[#f1fa8c]" />,
+      ia: <FaBrain className="text-[#bd93f9]" />,
+      blockchain: <FaCoins className="text-[#ff79c6]" />
+    },
+    banco: {
+      simples: <FaFileAlt className="text-[#6272a4]" />,
+      sqlite: <FaDatabase className="text-[#8be9fd]" />,
+      mysql: <FaServer className="text-[#50fa7b]" />,
+      nosql: <FaCloud className="text-[#f1fa8c]" />,
+      multiplo: <FaNetworkWired className="text-[#ffb86c]" />,
+      bigdata: <FaRocket className="text-[#ff79c6]" />
+    },
+    pagamento: {
+      basico: <FaCreditCard className="text-[#8be9fd]" />,
+      completo: <FaMoneyBillWave className="text-[#50fa7b]" />,
+      digital: <FaMobile className="text-[#bd93f9]" />,
+      internacional: <FaGlobe className="text-[#f1fa8c]" />,
+      crypto: <FaCoins className="text-[#ff79c6]" />
+    },
+    produtos: {
+      poucos: <FaBox className="text-[#8be9fd]" />,
+      medio: <FaStore className="text-[#50fa7b]" />,
+      grande: <FaBuilding className="text-[#f1fa8c]" />,
+      marketplace: <FaRocket className="text-[#ffb86c]" />,
+      digital: <FaDownload className="text-[#bd93f9]" />
+    },
+    equipe: {
+      solo: <FaUserTie className="text-[#8be9fd]" />,
+      dupla: <FaUsers className="text-[#50fa7b]" />,
+      pequena: <FaUserFriends className="text-[#f1fa8c]" />,
+      media: <FaBuilding className="text-[#ffb86c]" />,
+      grande: <FaRocket className="text-[#ff79c6]" />
+    },
+    regiao: {
+      interior: <FaMapMarkerAlt className="text-[#8be9fd]" />,
+      capital: <FaBuilding className="text-[#50fa7b]" />,
+      sp_rj: <FaRocket className="text-[#ff79c6]" />,
+      sul: <FaMapMarkerAlt className="text-[#bd93f9]" />,
+      remoto: <FaGlobe className="text-[#f1fa8c]" />
+    }
+  };
+
+  return iconMap[questionId]?.[optionValue] || <FaCode className="text-[#6272a4]" />;
+};
 
 interface Question {
   id: string;
@@ -656,134 +761,250 @@ https://devlator.com
 
   if (estimate !== null) {
     return (
-      <section className="w-full max-w-2xl mx-auto p-4 md:p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-4 md:mt-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#50fa7b] mb-6 text-center">Estimativa Calculada</h2>
-        <div className="bg-[#282a36] rounded-xl p-6 md:p-8 border border-[#6272a4] text-center mb-6">
-          <div className="text-2xl md:text-4xl font-bold text-[#50fa7b] mb-2">
-            R$ {estimate.min.toLocaleString('pt-BR')} - R$ {estimate.max.toLocaleString('pt-BR')}
+      <div className="min-h-screen bg-gradient-to-br from-[#282a36] via-[#373844] to-[#44475a] p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8 md:mb-12">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <FaMoneyBillWave className="text-[#50fa7b] text-3xl" />
+              <h1 className="text-2xl md:text-4xl font-bold text-[#50fa7b]">
+                Estimativa Calculada
+              </h1>
+            </div>
+            <p className="text-[#6272a4] text-sm md:text-base">
+              Sua estimativa personalizada baseada em IA
+            </p>
           </div>
-          <p className="text-[#f1fa8c] text-sm md:text-base">Faixa de valores estimada para seu projeto</p>
-          
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="mt-4 px-4 py-2 bg-[#bd93f9] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all"
-          >
-            {showDetails ? 'Ocultar' : 'Ver'} Detalhes de Custos
-          </button>
-        </div>
 
-        {showDetails && estimateDetails && (
-          <div className="bg-[#282a36]/50 rounded-xl p-6 border border-[#6272a4] mb-6">
-            <h3 className="text-xl font-bold text-[#bd93f9] mb-4">Detalhamento de Custos</h3>
+          {/* Price Card */}
+          <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-3xl p-8 md:p-12 mb-8 relative overflow-hidden">
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#50fa7b]/5 to-[#8be9fd]/5" />
             
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-lg font-semibold text-[#50fa7b] mb-2">💻 Desenvolvimento</h4>
-                {estimateDetails.breakdown.map((item, index) => (
-                  <p key={index} className="text-[#f8f8f2] text-sm ml-4">• {item}</p>
-                ))}
+            <div className="relative z-10 text-center">
+              <div className="mb-6">
+                <span className="text-sm text-[#8be9fd] bg-[#44475a]/60 px-4 py-2 rounded-full border border-[#6272a4]/30">
+                  Estimativa Final
+                </span>
               </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-[#8be9fd] mb-2">🌐 Hospedagem</h4>
-                <p className="text-[#f8f8f2] text-sm ml-4">• {estimateDetails.hosting}</p>
+              
+              <div className="mb-8">
+                <div className="text-5xl md:text-7xl font-bold text-[#50fa7b] mb-4">
+                  R$ {estimate.min.toLocaleString('pt-BR')}
+                </div>
+                <div className="text-2xl md:text-3xl text-[#f8f8f2] mb-2">
+                  até R$ {estimate.max.toLocaleString('pt-BR')}
+                </div>
+                <p className="text-[#6272a4] text-sm md:text-base">
+                  Faixa de preço baseada na complexidade do projeto
+                </p>
               </div>
+              
+              {isCalculating && (
+                <div className="flex items-center justify-center gap-3 text-[#8be9fd]">
+                  <div className="animate-spin w-6 h-6 border-2 border-[#8be9fd] border-t-transparent rounded-full" />
+                  <span>Analisando com IA...</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-              <div>
-                <h4 className="text-lg font-semibold text-[#f1fa8c] mb-2">🔧 Manutenção Anual</h4>
-                <p className="text-[#f8f8f2] text-sm ml-4">• {estimateDetails.maintenance}</p>
-              </div>
+          {/* Details Toggle */}
+          {estimateDetails && (
+            <div className="mb-8">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full group bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6 hover:border-[#bd93f9]/50 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FaChartLine className="text-[#bd93f9] text-xl" />
+                    <span className="text-lg font-semibold text-[#f8f8f2] group-hover:text-[#bd93f9] transition-colors">
+                      Detalhamento de Custos
+                    </span>
+                  </div>
+                  <svg 
+                    className={`w-5 h-5 text-[#6272a4] transition-transform duration-300 ${showDetails ? 'rotate-180' : ''}`} 
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+              
+              {showDetails && (
+                <div className="mt-4 space-y-4 animate-fade-in">
+                  {/* Breakdown */}
+                  <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6">
+                    <h3 className="text-lg font-bold text-[#8be9fd] mb-4 flex items-center gap-2">
+                      <FaCode className="text-sm" />
+                      Breakdown do Desenvolvimento
+                    </h3>
+                    <div className="space-y-3">
+                      {estimateDetails.breakdown.map((item, index) => (
+                        <div key={index} className="flex items-center gap-3 text-[#f8f8f2]">
+                          <div className="w-2 h-2 bg-[#50fa7b] rounded-full" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-              <div>
-                <h4 className="text-lg font-semibold text-[#ff79c6] mb-2">📦 Custos Extras</h4>
-                {estimateDetails.extras.map((extra, index) => (
-                  <p key={index} className="text-[#f8f8f2] text-sm ml-4">• {extra}</p>
+                  {/* Additional Costs */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6">
+                      <h4 className="font-bold text-[#ffb86c] mb-3 flex items-center gap-2">
+                        <FaServer className="text-sm" />
+                        Hospedagem
+                      </h4>
+                      <p className="text-[#f8f8f2] text-sm">{estimateDetails.hosting}</p>
+                    </div>
+                    
+                    <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6">
+                      <h4 className="font-bold text-[#f1fa8c] mb-3 flex items-center gap-2">
+                        <FaCog className="text-sm" />
+                        Manutenção Anual
+                      </h4>
+                      <p className="text-[#f8f8f2] text-sm">{estimateDetails.maintenance}</p>
+                    </div>
+                  </div>
+
+                  {/* Extras */}
+                  <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6">
+                    <h4 className="font-bold text-[#ff79c6] mb-4 flex items-center gap-2">
+                      <FaRocket className="text-sm" />
+                      Custos Adicionais
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {estimateDetails.extras.map((extra, index) => (
+                        <div key={index} className="flex items-center gap-3 text-[#f8f8f2] text-sm">
+                          <div className="w-1.5 h-1.5 bg-[#ff79c6] rounded-full" />
+                          <span>{extra}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Summary Card */}
+          <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6 mb-8">
+            <h3 className="text-xl font-bold text-[#bd93f9] mb-6 flex items-center gap-2">
+              <FaChartLine className="text-lg" />
+              Resumo das Respostas
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(answers).map(([key, value]: [string, any]) => {
+                const question = QUESTIONS.find((q: Question) => q.id === key);
+                return (
+                  <div key={key} className="bg-[#44475a]/40 rounded-xl p-4 border border-[#6272a4]/20">
+                    <div className="text-sm text-[#8be9fd] mb-2">{question?.question}</div>
+                    <div className="text-[#50fa7b] font-semibold">{value.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* AI Analysis */}
+          {aiReasoning && (
+            <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6 mb-6">
+              <h3 className="text-lg font-bold text-[#8be9fd] mb-4 flex items-center gap-2">
+                <FaRocket className="text-lg" />
+                Análise Técnica da IA
+              </h3>
+              <p className="text-[#f8f8f2] leading-relaxed">{aiReasoning}</p>
+            </div>
+          )}
+
+          {/* Market Validation */}
+          {marketValidation && (
+            <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6 mb-6">
+              <h3 className="text-lg font-bold text-[#f1fa8c] mb-4 flex items-center gap-2">
+                <FaMoneyBillWave className="text-lg" />
+                Validação de Mercado
+              </h3>
+              <p className="text-[#f8f8f2] leading-relaxed">{marketValidation}</p>
+            </div>
+          )}
+
+          {/* AI Suggestions */}
+          {aiSuggestions.length > 0 && (
+            <div className="bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-2xl p-6 mb-8">
+              <h3 className="text-lg font-bold text-[#50fa7b] mb-4 flex items-center gap-2">
+                <FaGraduationCap className="text-lg" />
+                Sugestões para Otimização
+              </h3>
+              <div className="space-y-3">
+                {aiSuggestions.map((suggestion, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 bg-[#44475a]/40 rounded-xl border border-[#6272a4]/20">
+                    <div className="w-2 h-2 bg-[#50fa7b] rounded-full mt-2 flex-shrink-0" />
+                    <span className="text-[#f8f8f2]">{suggestion}</span>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
-        )}
-        
-        <div className="space-y-3 mb-6">
-          <h3 className="text-xl font-bold text-[#bd93f9]">Resumo das Respostas:</h3>
-          {Object.entries(answers).map(([key, value]: [string, any]) => {
-            const question = QUESTIONS.find((q: Question) => q.id === key);
-            return (
-              <div key={key} className="flex justify-between items-center bg-[#282a36]/50 p-3 rounded">
-                <span className="text-[#f8f8f2]">{question?.question}</span>
-                <span className="text-[#50fa7b] font-semibold">{value.label}</span>
+          )}
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button 
+              onClick={resetCalculator}
+              className="group bg-[#bd93f9]/90 backdrop-blur-sm text-[#282a36] font-bold py-4 px-6 rounded-2xl hover:bg-[#ff79c6] transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#bd93f9]/20"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Calcular Novamente
               </div>
-            );
-          })}
+            </button>
+            
+            <button 
+              onClick={() => {
+                const avgEstimate = Math.round((estimate.min + estimate.max) / 2);
+                const chatContext = {
+                  projectData: answers,
+                  estimate: avgEstimate,
+                  reasoning: aiReasoning,
+                  marketValidation: marketValidation,
+                  suggestions: aiSuggestions
+                };
+                localStorage.setItem('devlator-chat-context', JSON.stringify(chatContext));
+                window.location.href = '/chat';
+              }}
+              className="group bg-[#50fa7b]/90 backdrop-blur-sm text-[#282a36] font-bold py-4 px-6 rounded-2xl hover:bg-[#8be9fd] transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#50fa7b]/20"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Refinar no Chat
+              </div>
+            </button>
+            
+            <button 
+              onClick={() => {
+                const projectName = prompt('Nome do projeto:');
+                const developerName = prompt('Seu nome/empresa:');
+                if (projectName && developerName) {
+                  exportContract(projectName, developerName);
+                }
+              }}
+              className="group bg-[#ffb86c]/90 backdrop-blur-sm text-[#282a36] font-bold py-4 px-6 rounded-2xl hover:bg-[#f1fa8c] transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#ffb86c]/20"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar Contrato
+              </div>
+            </button>
+          </div>
         </div>
-
-        {aiReasoning && (
-          <div className="bg-[#282a36]/50 p-4 rounded-xl mb-4">
-            <h3 className="text-lg font-bold text-[#8be9fd] mb-2">Análise Técnica:</h3>
-            <p className="text-[#f8f8f2] text-sm leading-relaxed">{aiReasoning}</p>
-          </div>
-        )}
-
-        {marketValidation && (
-          <div className="bg-[#282a36]/50 p-4 rounded-xl mb-4">
-            <h3 className="text-lg font-bold text-[#f1fa8c] mb-2">Validação de Mercado:</h3>
-            <p className="text-[#f8f8f2] text-sm leading-relaxed">{marketValidation}</p>
-          </div>
-        )}
-
-        {aiSuggestions.length > 0 && (
-          <div className="bg-[#282a36]/50 p-4 rounded-xl mb-6">
-            <h3 className="text-lg font-bold text-[#50fa7b] mb-2">Sugestões para Otimização:</h3>
-            <ul className="space-y-2">
-              {aiSuggestions.map((suggestion, i) => (
-                <li key={i} className="text-[#f8f8f2] text-sm flex items-start gap-3">
-                  <span className="text-[#50fa7b] mt-1">→</span>
-                  <span>{suggestion}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button 
-            onClick={resetCalculator}
-            className="px-4 md:px-6 py-2 md:py-3 bg-[#bd93f9] text-[#282a36] font-bold rounded-lg hover:bg-[#ff79c6] transition-all text-sm md:text-base"
-          >
-            Calcular Novamente
-          </button>
-          <button 
-            onClick={() => {
-              // Salvar contexto para o chat (usar valor médio para o chat)
-              const avgEstimate = Math.round((estimate.min + estimate.max) / 2);
-              const chatContext = {
-                projectData: answers,
-                estimate: avgEstimate,
-                reasoning: aiReasoning,
-                marketValidation: marketValidation,
-                suggestions: aiSuggestions
-              };
-              localStorage.setItem('devlator-chat-context', JSON.stringify(chatContext));
-              window.location.href = '/chat';
-            }}
-            className="px-4 md:px-6 py-2 md:py-3 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all text-sm md:text-base"
-          >
-            Refinar no Chat
-          </button>
-          <button 
-            onClick={() => {
-              const projectName = prompt('Nome do projeto:');
-              const developerName = prompt('Seu nome/empresa:');
-              if (projectName && developerName) {
-                exportContract(projectName, developerName);
-              }
-            }}
-            className="px-4 md:px-6 py-2 md:py-3 bg-[#ffb86c] text-[#282a36] font-bold rounded-lg hover:bg-[#f1fa8c] transition-all text-sm md:text-base"
-          >
-            Exportar Contrato
-          </button>
-        </div>
-      </section>
+      </div>
     );
   }
 
@@ -799,73 +1020,132 @@ https://devlator.com
   const currentQuestion = applicableQuestions[currentQuestionIndex];
 
   return (
-    <section className="w-full max-w-xl mx-auto p-4 md:p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-4 md:mt-8">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-xs md:text-sm text-[#f1fa8c]">
-            Pergunta {currentQuestionIndex + 1} de {applicableQuestions.length}
-          </span>
-          <div className="flex space-x-1">
+    <div className="min-h-screen bg-gradient-to-br from-[#282a36] via-[#373844] to-[#44475a] p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8 md:mb-12">
+          <div className="inline-flex items-center gap-3 mb-4">
+            {currentQuestion.icon}
+            <h1 className="text-2xl md:text-4xl font-bold text-[#bd93f9]">
+              Calculadora de Preço IA
+            </h1>
+          </div>
+          <p className="text-[#6272a4] text-sm md:text-base">
+            Obtenha uma estimativa precisa para seu projeto de desenvolvimento
+          </p>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mb-8 md:mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm text-[#f1fa8c] font-medium">
+              Pergunta {currentQuestionIndex + 1} de {applicableQuestions.length}
+            </span>
+            <span className="text-xs text-[#8be9fd] bg-[#282a36]/80 backdrop-blur-sm px-3 py-1 rounded-full border border-[#44475a]">
+              {currentQuestion.category}
+            </span>
+          </div>
+          
+          <div className="w-full bg-[#282a36]/60 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-[#44475a]/50">
+            <div 
+              className="h-full bg-gradient-to-r from-[#50fa7b] to-[#8be9fd] transition-all duration-500 ease-out"
+              style={{ width: `${((currentQuestionIndex + 1) / applicableQuestions.length) * 100}%` }}
+            />
+          </div>
+          
+          <div className="flex justify-between mt-2">
             {applicableQuestions.map((_: Question, i: number) => (
               <div 
                 key={i} 
-                className={`w-2 h-2 md:w-3 md:h-3 rounded-full ${i <= currentQuestionIndex ? 'bg-[#50fa7b]' : 'bg-[#6272a4]'}`}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i <= currentQuestionIndex 
+                    ? 'bg-[#50fa7b] shadow-lg shadow-[#50fa7b]/30' 
+                    : 'bg-[#6272a4]/50'
+                }`}
               />
             ))}
           </div>
         </div>
-        
-        <div className="mb-4">
-          <span className="text-xs text-[#8be9fd] bg-[#282a36] px-2 py-1 rounded">
-            {currentQuestion.category}
-          </span>
-        </div>
-        
-        <h1 className="text-xl md:text-2xl font-bold text-[#bd93f9] mb-4 flex items-center gap-3">
-          {currentQuestion.icon}
-          <span className="hidden sm:inline">Calculadora de Preço IA</span>
-          <span className="sm:hidden">Calculadora IA</span>
-        </h1>
-        
-        <h2 className="text-base md:text-xl text-[#f8f8f2] mb-6">{currentQuestion.question}</h2>
-      </div>
 
-      <div className="space-y-3">
-        {currentQuestion.options.map((option: QuestionOption) => (
-          <button
-            key={option.value}
-            onClick={() => handleAnswer(option)}
-            className="w-full p-3 md:p-4 text-left bg-[#282a36] hover:bg-[#6272a4] rounded-lg border border-[#44475a] transition-all hover:border-[#bd93f9] group"
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <span className="text-sm md:text-base text-[#f8f8f2] group-hover:text-[#bd93f9] transition-colors block">
-                  {option.label}
-                </span>
-                {option.description && (
-                  <span className="text-xs text-[#6272a4] mt-1 block">
-                    {option.description}
-                  </span>
-                )}
+        {/* Question */}
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-xl md:text-3xl font-bold text-[#f8f8f2] leading-tight max-w-4xl mx-auto">
+            {currentQuestion.question}
+          </h2>
+        </div>
+
+        {/* Options Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
+          {currentQuestion.options.map((option: QuestionOption) => (
+            <button
+              key={option.value}
+              onClick={() => handleAnswer(option)}
+              className="group relative p-8 bg-[#282a36]/60 backdrop-blur-sm border border-[#44475a]/50 rounded-3xl hover:border-[#bd93f9]/50 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-[#bd93f9]/20 text-left overflow-hidden min-h-[200px]"
+            >
+              {/* Gradient overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#bd93f9]/8 to-[#50fa7b]/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
+              
+              {/* Content */}
+              <div className="relative z-10 h-full flex flex-col">
+                {/* Icon and multiplier header */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="text-3xl transform group-hover:scale-110 transition-transform duration-300">
+                      {getOptionIcon(currentQuestion.id, option.value)}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-[#f8f8f2] group-hover:text-[#bd93f9] transition-colors duration-300 leading-tight">
+                        {option.label}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-semibold text-[#8be9fd] bg-[#44475a]/80 px-3 py-1.5 rounded-full border border-[#6272a4]/50 group-hover:bg-[#bd93f9]/20 group-hover:border-[#bd93f9]/50 transition-all duration-300">
+                      {option.multiplier}x
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Description */}
+                <div className="flex-1 flex items-center">
+                  {option.description && (
+                    <p className="text-base text-[#6272a4] group-hover:text-[#8be9fd] transition-colors duration-300 leading-relaxed">
+                      {option.description}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Selection indicator */}
+                <div className="absolute top-6 right-6 w-8 h-8 border-2 border-[#6272a4]/50 rounded-full group-hover:border-[#bd93f9] transition-colors duration-300 bg-[#282a36]/80 backdrop-blur-sm">
+                  <div className="absolute inset-1.5 bg-[#bd93f9] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-2 border border-[#bd93f9] rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
+                </div>
               </div>
-              <span className="text-xs text-[#f1fa8c] ml-2">
-                {option.multiplier}x
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {currentQuestionIndex > 0 && (
-        <div className="mt-6 flex justify-center">
-          <button 
-            onClick={goToPreviousQuestion}
-            className="px-4 py-2 text-sm bg-[#6272a4] text-[#f8f8f2] rounded-lg hover:bg-[#44475a] transition-all"
-          >
-            ← Voltar
-          </button>
+              
+              {/* Enhanced hover effect lines */}
+              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-[#bd93f9] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute bottom-0 right-0 w-full h-[3px] bg-gradient-to-l from-transparent via-[#50fa7b] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute left-0 top-0 w-[3px] h-full bg-gradient-to-b from-transparent via-[#ff79c6] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute right-0 top-0 w-[3px] h-full bg-gradient-to-b from-transparent via-[#f1fa8c] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </button>
+          ))}
         </div>
-      )}
-    </section>
+
+        {/* Navigation */}
+        {currentQuestionIndex > 0 && (
+          <div className="flex justify-center">
+            <button 
+              onClick={goToPreviousQuestion}
+              className="group flex items-center gap-2 px-6 py-3 bg-[#6272a4]/80 backdrop-blur-sm text-[#f8f8f2] rounded-xl border border-[#44475a]/50 hover:bg-[#44475a] hover:border-[#bd93f9]/50 transition-all duration-300 hover:scale-105"
+            >
+              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Pergunta Anterior
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

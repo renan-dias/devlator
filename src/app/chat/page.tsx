@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import ChatHistory, { addMessage, ChatMessage } from "@/components/ChatHistory";
 import ChatContextSelector from "@/components/ChatContextSelector";
+import ChatSessionManager from "@/components/ChatSessionManager";
 import { FaPaperPlane, FaRobot, FaCalculator, FaFilePdf, FaEye, FaExclamationTriangle } from "react-icons/fa";
 import Modal, { useModal } from "@/components/Modal";
 
@@ -114,6 +115,19 @@ export default function ChatPage() {
     openError();
   };
 
+  const handleLoadSession = (sessionMessages: ChatMessage[]) => {
+    setMessages(sessionMessages);
+  };
+
+  const handleNewSession = () => {
+    setMessages([]);
+    setContext([]);
+    setContextData({});
+    setProjectContext(null);
+    setCanShowPricing(false);
+    setShowPricingView(false);
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -195,163 +209,184 @@ export default function ChatPage() {
       
       // Configurações
       pdf.setFont('helvetica');
-      let yPosition = 20;
+      let yPosition = 30;
       const pageWidth = (pdf as any).internal.pageSize.width;
       const margin = 20;
-      const lineHeight = 7;
+      const lineHeight = 8;
 
-      // Título
-      pdf.setFontSize(18);
-      pdf.setTextColor(189, 147, 249); // Cor roxa do tema
-      pdf.text('RELATÓRIO DE PRECIFICAÇÃO - DEVLATOR', margin, yPosition);
-      yPosition += lineHeight * 2;
-
-      // Data e estimativa
-      pdf.setFontSize(12);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, yPosition);
-      yPosition += lineHeight;
+      // Header com logo (simulado)
+      pdf.setFillColor(40, 42, 54); // Cor de fundo escura
+      pdf.rect(0, 0, pageWidth, 25, 'F');
       
-      pdf.setFontSize(16);
-      pdf.setTextColor(80, 250, 123); // Verde do tema
-      pdf.text(`Estimativa: R$ ${projectContext.estimate?.toLocaleString('pt-BR')}`, margin, yPosition);
+      pdf.setFontSize(20);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('🚀 DEVLATOR', margin, 18);
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(189, 147, 249);
+      pdf.text('Calculadora Profissional para DEVs', margin + 60, 18);
+
+      // Título principal
+      yPosition = 45;
+      pdf.setFontSize(24);
+      pdf.setTextColor(80, 250, 123);
+      pdf.text('RELATÓRIO DE PRECIFICAÇÃO', margin, yPosition);
       yPosition += lineHeight * 2;
 
-      // Especificações do projeto
+      // Box com informações básicas
+      pdf.setFillColor(68, 71, 90);
+      pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, 35, 3, 3, 'F');
+      
       pdf.setFontSize(14);
-      pdf.setTextColor(189, 147, 249);
-      pdf.text('ESPECIFICAÇÕES DO PROJETO:', margin, yPosition);
-      yPosition += lineHeight;
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('📋 INFORMAÇÕES GERAIS', margin + 5, yPosition + 12);
+      
+      pdf.setFontSize(11);
+      pdf.setTextColor(241, 250, 140);
+      pdf.text(`📅 Data: ${new Date().toLocaleDateString('pt-BR')}`, margin + 5, yPosition + 22);
+      pdf.text(`💰 Estimativa: R$ ${projectContext.estimate?.toLocaleString('pt-BR')}`, margin + 5, yPosition + 30);
+      
+      yPosition += 45;
 
+      // Tabela de especificações
+      pdf.setFontSize(16);
+      pdf.setTextColor(189, 147, 249);
+      pdf.text('📊 ESPECIFICAÇÕES DO PROJETO', margin, yPosition);
+      yPosition += lineHeight * 1.5;
+
+      // Cabeçalho da tabela
+      pdf.setFillColor(98, 114, 164);
+      pdf.rect(margin, yPosition, pageWidth - margin * 2, 12, 'F');
+      
       pdf.setFontSize(10);
-      pdf.setTextColor(0, 0, 0);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('CATEGORIA', margin + 3, yPosition + 8);
+      pdf.text('ESPECIFICAÇÃO', margin + 80, yPosition + 8);
+      
+      yPosition += 12;
+
+      // Linhas da tabela
+      let rowIndex = 0;
       Object.entries(projectContext.projectData || {}).forEach(([key, value]: [string, any]) => {
-        const text = `• ${key}: ${value.label || value}`;
-        const lines = pdf.splitTextToSize(text, pageWidth - margin * 2);
-        pdf.text(lines, margin, yPosition);
-        yPosition += lineHeight * lines.length;
-      });
-      yPosition += lineHeight;
-
-      // Análise técnica
-      pdf.setFontSize(14);
-      pdf.setTextColor(189, 147, 249);
-      pdf.text('ANÁLISE TÉCNICA:', margin, yPosition);
-      yPosition += lineHeight;
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(0, 0, 0);
-      const reasoningLines = pdf.splitTextToSize(projectContext.reasoning || 'Análise não disponível', pageWidth - margin * 2);
-      pdf.text(reasoningLines, margin, yPosition);
-      yPosition += lineHeight * reasoningLines.length + lineHeight;
-
-      // Validação de mercado
-      pdf.setFontSize(14);
-      pdf.setTextColor(189, 147, 249);
-      pdf.text('VALIDAÇÃO DE MERCADO:', margin, yPosition);
-      yPosition += lineHeight;
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(0, 0, 0);
-      const validationLines = pdf.splitTextToSize(projectContext.marketValidation || 'Validação não disponível', pageWidth - margin * 2);
-      pdf.text(validationLines, margin, yPosition);
-      yPosition += lineHeight * validationLines.length + lineHeight;
-
-      // Sugestões
-      pdf.setFontSize(14);
-      pdf.setTextColor(189, 147, 249);
-      pdf.text('SUGESTÕES DE OTIMIZAÇÃO:', margin, yPosition);
-      yPosition += lineHeight;
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(0, 0, 0);
-      (projectContext.suggestions || []).forEach((suggestion: string, i: number) => {
-        const text = `${i + 1}. ${suggestion}`;
-        const lines = pdf.splitTextToSize(text, pageWidth - margin * 2);
-        pdf.text(lines, margin, yPosition);
-        yPosition += lineHeight * lines.length;
+        const bgColor = rowIndex % 2 === 0 ? [248, 248, 242] : [255, 255, 255];
+        pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+        pdf.rect(margin, yPosition, pageWidth - margin * 2, 10, 'F');
+        
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(9);
+        pdf.text(key.toUpperCase(), margin + 3, yPosition + 7);
+        
+        const specText = pdf.splitTextToSize(value.label || value, 80);
+        pdf.text(specText, margin + 80, yPosition + 7);
+        
+        yPosition += 10;
+        rowIndex++;
       });
 
-      // Nova página para conversas se necessário
-      if (messages.length > 0) {
+      yPosition += 10;
+
+      // Box de análise técnica
+      if (yPosition > 200) {
         pdf.addPage();
-        yPosition = 20;
-
-        pdf.setFontSize(14);
-        pdf.setTextColor(189, 147, 249);
-        pdf.text('CONVERSAS DO CHAT:', margin, yPosition);
-        yPosition += lineHeight * 2;
-
-        messages.forEach((msg) => {
-          if (yPosition > 270) { // Nova página se necessário
-            pdf.addPage();
-            yPosition = 20;
-          }
-
-          pdf.setFontSize(10);
-          pdf.setTextColor(80, 250, 123);
-          pdf.text(msg.role === 'user' ? 'USUÁRIO:' : 'DEVINHO:', margin, yPosition);
-          yPosition += lineHeight;
-
-          pdf.setTextColor(0, 0, 0);
-          const contentLines = pdf.splitTextToSize(msg.content, pageWidth - margin * 2);
-          pdf.text(contentLines, margin, yPosition);
-          yPosition += lineHeight * contentLines.length + lineHeight;
-        });
+        yPosition = 30;
       }
 
-      // Rodapé
+      pdf.setFillColor(40, 42, 54);
+      pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, 8, 2, 2, 'F');
+      
+      pdf.setFontSize(14);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('🔧 ANÁLISE TÉCNICA', margin + 5, yPosition + 6);
+      yPosition += 15;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      const reasoningLines = pdf.splitTextToSize(projectContext.reasoning || 'Análise não disponível', pageWidth - margin * 2 - 10);
+      
+      // Box de conteúdo
+      pdf.setFillColor(248, 248, 248);
+      pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, reasoningLines.length * 5 + 8, 2, 2, 'F');
+      pdf.text(reasoningLines, margin + 5, yPosition + 8);
+      yPosition += reasoningLines.length * 5 + 18;
+
+      // Box de validação de mercado
+      if (yPosition > 200) {
+        pdf.addPage();
+        yPosition = 30;
+      }
+
+      pdf.setFillColor(40, 42, 54);
+      pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, 8, 2, 2, 'F');
+      
+      pdf.setFontSize(14);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('📈 VALIDAÇÃO DE MERCADO', margin + 5, yPosition + 6);
+      yPosition += 15;
+
+      const validationLines = pdf.splitTextToSize(projectContext.marketValidation || 'Validação não disponível', pageWidth - margin * 2 - 10);
+      
+      pdf.setFillColor(248, 248, 248);
+      pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, validationLines.length * 5 + 8, 2, 2, 'F');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(validationLines, margin + 5, yPosition + 8);
+      yPosition += validationLines.length * 5 + 18;
+
+      // Lista de sugestões com ícones
+      if (yPosition > 200) {
+        pdf.addPage();
+        yPosition = 30;
+      }
+
+      pdf.setFillColor(40, 42, 54);
+      pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, 8, 2, 2, 'F');
+      
+      pdf.setFontSize(14);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('💡 SUGESTÕES DE OTIMIZAÇÃO', margin + 5, yPosition + 6);
+      yPosition += 15;
+
+      (projectContext.suggestions || []).forEach((suggestion: string, i: number) => {
+        if (yPosition > 250) {
+          pdf.addPage();
+          yPosition = 30;
+        }
+
+        // Box para cada sugestão
+        pdf.setFillColor(80, 250, 123, 0.1);
+        pdf.roundedRect(margin, yPosition, pageWidth - margin * 2, 12, 2, 2, 'F');
+        
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`${i + 1}.`, margin + 5, yPosition + 8);
+        
+        const suggestionText = pdf.splitTextToSize(suggestion, pageWidth - margin * 2 - 20);
+        pdf.text(suggestionText, margin + 15, yPosition + 8);
+        yPosition += 18;
+      });
+
+      // Rodapé profissional
       const totalPages = (pdf as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
+        
+        // Linha de rodapé
+        pdf.setDrawColor(189, 147, 249);
+        pdf.line(margin, (pdf as any).internal.pageSize.height - 20, pageWidth - margin, (pdf as any).internal.pageSize.height - 20);
+        
         pdf.setFontSize(8);
         pdf.setTextColor(100, 100, 100);
-        pdf.text('Relatório gerado pelo Devlator - Calculadora para DEVs', margin, (pdf as any).internal.pageSize.height - 10);
-        pdf.text(`https://devlator.com | Página ${i} de ${totalPages}`, pageWidth - margin - 50, (pdf as any).internal.pageSize.height - 10);
+        pdf.text('🚀 Relatório gerado pelo Devlator - Calculadora Profissional para DEVs', margin, (pdf as any).internal.pageSize.height - 12);
+        pdf.text(`devlator.com | Página ${i} de ${totalPages}`, pageWidth - margin - 40, (pdf as any).internal.pageSize.height - 12);
       }
 
-      // Salvar
-      pdf.save(`relatorio-precificacao-${Date.now()}.pdf`);
+      // Salvar com nome mais descritivo
+      const firstValue = Object.values(projectContext.projectData || {})?.[0] as any;
+      const projectName = firstValue?.label || 'projeto';
+      pdf.save(`devlator-relatorio-${projectName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.pdf`);
+      
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      // Fallback para texto simples
-      const pdfContent = `
-RELATÓRIO DE PRECIFICAÇÃO - DEVLATOR
-===================================
-
-Data: ${new Date().toLocaleDateString('pt-BR')}
-Estimativa: R$ ${projectContext.estimate?.toLocaleString('pt-BR')}
-
-ESPECIFICAÇÕES DO PROJETO:
-${Object.entries(projectContext.projectData || {}).map(([key, value]: [string, any]) => 
-  `• ${key}: ${value.label || value}`
-).join('\n')}
-
-ANÁLISE TÉCNICA:
-${projectContext.reasoning || 'Análise não disponível'}
-
-VALIDAÇÃO DE MERCADO:
-${projectContext.marketValidation || 'Validação não disponível'}
-
-SUGESTÕES DE OTIMIZAÇÃO:
-${(projectContext.suggestions || []).map((suggestion: string, i: number) => 
-  `${i + 1}. ${suggestion}`
-).join('\n')}
-
----
-Relatório gerado pelo Devlator - Calculadora para DEVs
-https://devlator.com
-`;
-
-      const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `relatorio-precificacao-${Date.now()}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      showError('Erro ao gerar relatório PDF. Tente novamente.');
     }
   };
 
@@ -444,12 +479,19 @@ https://devlator.com
           <FaRobot className="text-xl md:text-2xl text-[#50fa7b]" />
           <h1 className="text-xl md:text-2xl font-bold text-[#bd93f9]">Chat com Devinho</h1>
         </div>
-        {projectContext && (
-          <div className="flex items-center gap-2 bg-[#282a36] px-3 py-1 rounded-lg border border-[#6272a4]">
-            <FaCalculator className="text-[#50fa7b] text-sm" />
-            <span className="text-[#f1fa8c] text-xs">Contexto da calculadora carregado</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <ChatSessionManager
+            currentMessages={messages}
+            onLoadSession={handleLoadSession}
+            onNewSession={handleNewSession}
+          />
+          {projectContext && (
+            <div className="flex items-center gap-2 bg-[#282a36] px-3 py-1 rounded-lg border border-[#6272a4]">
+              <FaCalculator className="text-[#50fa7b] text-sm" />
+              <span className="text-[#f1fa8c] text-xs">Contexto da calculadora carregado</span>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="bg-[#282a36]/50 rounded-xl p-3 md:p-4 mb-6 border border-[#44475a] h-64 md:h-96 overflow-y-auto">

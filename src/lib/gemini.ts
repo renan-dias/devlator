@@ -1,6 +1,78 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Implementação direta da API Gemini usando fetch
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+export interface ProjectData {
+  [key: string]: { value: string; label: string; multiplier: number; description?: string };
+}
+
+async function callGeminiAPI(prompt: string): Promise<string> {
+  try {
+    const response = await fetch(GEMINI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 8192,
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Erro na API Gemini:', response.status, errorText);
+      throw new Error(`Erro na API: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      throw new Error('Nenhuma resposta foi gerada pela API');
+    }
+
+    const content = data.candidates[0]?.content?.parts?.[0]?.text;
+    if (!content) {
+      throw new Error('Resposta vazia da API');
+    }
+
+    return content;
+  } catch (error) {
+    console.error('Erro ao chamar API Gemini:', error);
+    throw error;
+  }
+}
 
 export interface ProjectData {
   [key: string]: { value: string; label: string; multiplier: number; description?: string };
