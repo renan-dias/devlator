@@ -14,7 +14,7 @@ export default function HomePage() {
           Devlator
         </h1>
         <p className="text-lg md:text-xl text-[#f8f8f2] mb-6 max-w-2xl mx-auto leading-relaxed">
-          Tem um projeto e quer estimar quanto cobrar? A Devlator está aqui para te ajudar!
+          Hélio, Issac, Hélio, Issac, Hélio, Issac, Hélio, Issac, Hélio, Issac, Hélio, Issac
         </p>
         <p className="text-base md:text-lg text-[#f1fa8c] mb-8">
           Calculadora inteligente com IA para precificação de projetos de desenvolvimento.
