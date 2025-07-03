@@ -557,7 +557,13 @@ export default function CalculadoraPage() {
 
       const result = await response.json();
       
-      // Criar intervalo baseado na estimativa da IA
+      console.log("📊 Resultado da estimativa:", result);
+      
+      // Verificar fonte do cálculo
+      const isAI = result.source === 'ai';
+      const isOffline = result.source === 'offline';
+      
+      // Criar intervalo baseado na estimativa
       const baseEstimate = result.estimate;
       const minEstimate = Math.round(baseEstimate * 0.8); // -20%
       const maxEstimate = Math.round(baseEstimate * 1.3); // +30%
@@ -567,13 +573,25 @@ export default function CalculadoraPage() {
       setAiSuggestions(result.suggestions);
       setMarketValidation(result.marketValidation);
 
+      // Mostrar breakdown detalhado se disponível
+      const detailsBreakdown = result.breakdown ? result.breakdown : [
+        `Desenvolvimento: R$ ${Math.round(baseEstimate * 0.7).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.9).toLocaleString('pt-BR')}`,
+        `Testes e QA: R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.15).toLocaleString('pt-BR')}`,
+        `Deploy e configuração: R$ ${Math.round(baseEstimate * 0.05).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')}`
+      ];
+
+      // Adicionar informação sobre a fonte do cálculo
+      if (isAI) {
+        detailsBreakdown.unshift("🤖 Calculado com IA Gemini (valores precisos)");
+      } else if (isOffline) {
+        detailsBreakdown.unshift("📊 Calculado offline (valores baseados em tabela de mercado)");
+      } else {
+        detailsBreakdown.unshift("⚠️ Cálculo de emergência aplicado");
+      }
+
       // Adicionar detalhes da estimativa
       setEstimateDetails({
-        breakdown: [
-          `Desenvolvimento: R$ ${Math.round(baseEstimate * 0.7).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.9).toLocaleString('pt-BR')}`,
-          `Testes e QA: R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.15).toLocaleString('pt-BR')}`,
-          `Deploy e configuração: R$ ${Math.round(baseEstimate * 0.05).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')}`
-        ],
+        breakdown: detailsBreakdown,
         hosting: `R$ 30 - R$ 300/mês (dependendo do tráfego e recursos)`,
         maintenance: `R$ ${Math.round(baseEstimate * 0.1).toLocaleString('pt-BR')} - R$ ${Math.round(baseEstimate * 0.2).toLocaleString('pt-BR')}/ano`,
         extras: [

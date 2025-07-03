@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface ProjectDataValue {
   label: string;
@@ -12,140 +11,275 @@ interface ProjectData {
   [key: string]: ProjectDataValue;
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// Tabela de valores base por categoria (valores de mercado brasileiro 2024)
+const BASE_VALUES = {
+  // Tipo de projeto
+  tipo_landing: { base: 1500, complexity: 1.0, description: "Landing page simples" },
+  tipo_website: { base: 3500, complexity: 1.2, description: "Website institucional" },
+  tipo_blog: { base: 2500, complexity: 1.1, description: "Blog/CMS básico" },
+  tipo_webapp: { base: 8000, complexity: 2.0, description: "Aplicação web completa" },
+  tipo_mobile: { base: 12000, complexity: 2.5, description: "App mobile nativo" },
+  tipo_ecommerce: { base: 15000, complexity: 3.0, description: "E-commerce completo" },
+  tipo_sistema: { base: 25000, complexity: 4.0, description: "Sistema empresarial" },
+  tipo_api: { base: 6000, complexity: 1.8, description: "API/Backend" },
+
+  // Escopo
+  escopo_micro: { multiplier: 0.3, weeks: 1 },
+  escopo_pequeno: { multiplier: 0.6, weeks: 2 },
+  escopo_medio: { multiplier: 1.0, weeks: 4 },
+  escopo_grande: { multiplier: 1.8, weeks: 8 },
+  escopo_muito_grande: { multiplier: 3.0, weeks: 16 },
+
+  // Design
+  design_pronto: { multiplier: 0.7, description: "Design já fornecido" },
+  design_template: { multiplier: 0.9, description: "Template/framework" },
+  design_simples: { multiplier: 1.0, description: "Design simples" },
+  design_customizado: { multiplier: 1.5, description: "Design customizado" },
+  design_complexo: { multiplier: 2.2, description: "Design complexo/animações" },
+
+  // Funcionalidades
+  func_basicas: { multiplier: 0.8, description: "Funcionalidades básicas" },
+  func_intermediarias: { multiplier: 1.2, description: "Funcionalidades intermediárias" },
+  func_avancadas: { multiplier: 1.8, description: "Funcionalidades avançadas" },
+  func_complexas: { multiplier: 2.5, description: "Funcionalidades muito complexas" },
+
+  // Tecnologia
+  tech_simples: { multiplier: 0.9, description: "Stack simples" },
+  tech_moderna: { multiplier: 1.1, description: "Stack moderna" },
+  tech_especializada: { multiplier: 1.4, description: "Tecnologias especializadas" },
+  tech_cutting_edge: { multiplier: 1.8, description: "Tecnologias de ponta" },
+
+  // Prazo
+  prazo_flexivel: { multiplier: 0.8, description: "Prazo flexível" },
+  prazo_normal: { multiplier: 1.0, description: "Prazo normal" },
+  prazo_apertado: { multiplier: 1.3, description: "Prazo apertado" },
+  prazo_urgente: { multiplier: 1.8, description: "Urgente" },
+
+  // Equipe
+  equipe_freelancer: { multiplier: 0.7, description: "Freelancer solo" },
+  equipe_pequena: { multiplier: 1.0, description: "Equipe pequena (2-3)" },
+  equipe_media: { multiplier: 1.3, description: "Equipe média (4-6)" },
+  equipe_grande: { multiplier: 1.8, description: "Equipe grande (7+)" },
+
+  // Qualidade
+  qual_basica: { multiplier: 0.8, description: "Qualidade básica" },
+  qual_profissional: { multiplier: 1.0, description: "Qualidade profissional" },
+  qual_premium: { multiplier: 1.4, description: "Qualidade premium" },
+  qual_enterprise: { multiplier: 2.0, description: "Nível enterprise" }
+};
+
+function calculateOfflineEstimate(projectData: ProjectData): {
+  estimate: number;
+  breakdown: string[];
+  reasoning: string;
+  suggestions: string[];
+} {
+  console.log("🔄 Calculando estimativa offline - IA indisponível");
+  
+  let basePrice = 2500; // Valor mínimo
+  let totalMultiplier = 1;
+  let complexityScore = 1;
+  const breakdown: string[] = [];
+  
+  // Analisar cada resposta e aplicar valores correspondentes
+  Object.entries(projectData).forEach(([questionKey, answer]) => {
+    const lookupKey = `${questionKey}_${answer.value}`;
+    const valueData = BASE_VALUES[lookupKey as keyof typeof BASE_VALUES] as any;
+    
+    if (valueData) {
+      if (valueData.base) {
+        // É um tipo de projeto (define valor base)
+        basePrice = valueData.base;
+        complexityScore = valueData.complexity || 1;
+        breakdown.push(`Tipo: ${answer.label} - Base R$ ${basePrice.toLocaleString('pt-BR')}`);
+      } else if (valueData.multiplier) {
+        // É um modificador
+        totalMultiplier *= valueData.multiplier;
+        breakdown.push(`${answer.label}: ${valueData.multiplier}x ${valueData.description ? '(' + valueData.description + ')' : ''}`);
+      }
+    } else {
+      // Fallback usando multiplier original da resposta
+      if (answer.multiplier && answer.multiplier !== 1) {
+        totalMultiplier *= answer.multiplier;
+        breakdown.push(`${answer.label}: ${answer.multiplier}x (valor configurado)`);
+      }
+    }
+  });
+
+  // Calcular preço final
+  const finalPrice = Math.round(basePrice * totalMultiplier * complexityScore);
+  
+  // Garantir valor mínimo realista
+  const minRealistic = 800;
+  const adjustedPrice = Math.max(finalPrice, minRealistic);
+  
+  breakdown.push(`Cálculo final: R$ ${basePrice.toLocaleString('pt-BR')} × ${totalMultiplier.toFixed(2)} × ${complexityScore} = R$ ${adjustedPrice.toLocaleString('pt-BR')}`);
+
+  const reasoning = `Estimativa calculada com base em valores reais do mercado brasileiro 2024/2025. 
+    Valor base de R$ ${basePrice.toLocaleString('pt-BR')} ajustado por fatores de complexidade (${complexityScore}x) 
+    e especificações técnicas (${totalMultiplier.toFixed(2)}x). 
+    Resultado: R$ ${adjustedPrice.toLocaleString('pt-BR')} considerando padrões de qualidade profissional.`;
+
+  const suggestions = [
+    "Defina escopo detalhado para evitar mudanças custosas durante desenvolvimento",
+    "Considere desenvolvimento em fases para diluir investimento inicial",
+    "Avalie uso de templates/frameworks para reduzir tempo e custo",
+    "Planeje testes e homologação para garantir qualidade final",
+    "Reserve 15-20% do orçamento para imprevistos e ajustes finais"
+  ];
+
+  return {
+    estimate: adjustedPrice,
+    breakdown,
+    reasoning,
+    suggestions
+  };
+}
+
+async function calculateAIEstimate(projectData: ProjectData): Promise<{
+  estimate: number;
+  reasoning: string;
+  suggestions: string[];
+  marketValidation: string;
+}> {
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  
+  // Criar descrição detalhada do projeto
+  const projectDescription = Object.entries(projectData)
+    .map(([key, value]: [string, ProjectDataValue]) => `${key}: ${value.label}`)
+    .join('\n');
+
+  const prompt = `Como especialista sênior em precificação de projetos de desenvolvimento de software no Brasil, analise:
+
+${projectDescription}
+
+IMPORTANTE: Considere valores realistas do mercado brasileiro 2024/2025:
+- Landing pages: R$ 800 - R$ 3.000
+- Sites institucionais: R$ 2.000 - R$ 8.000  
+- E-commerce básico: R$ 5.000 - R$ 25.000
+- Apps mobile: R$ 8.000 - R$ 50.000
+- Sistemas complexos: R$ 15.000 - R$ 100.000+
+
+Forneça resposta no formato exato:
+ESTIMATIVA: R$ [valor_numerico]
+JUSTIFICATIVA: [explicação técnica de 2-3 linhas]
+VALIDACAO_MERCADO: [análise comparativa com mercado brasileiro]
+SUGESTOES:
+- [sugestão 1]
+- [sugestão 2]
+- [sugestão 3]
+- [sugestão 4]
+- [sugestão 5]`;
+
+  const response = await fetch(GEMINI_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.3,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  // Parse da resposta
+  const estimateMatch = text.match(/ESTIMATIVA:\s*R\$\s*([\d.,]+)/);
+  const justificativaMatch = text.match(/JUSTIFICATIVA:\s*([\s\S]*?)(?=VALIDACAO_MERCADO:|$)/);
+  const validacaoMatch = text.match(/VALIDACAO_MERCADO:\s*([\s\S]*?)(?=SUGESTOES:|$)/);
+  const sugestoesMatch = text.match(/SUGESTOES:\s*((?:- .*(?:\n|$))*)/);
+
+  const estimate = estimateMatch 
+    ? parseInt(estimateMatch[1].replace(/[.,]/g, '')) 
+    : 0;
+
+  const reasoning = justificativaMatch 
+    ? justificativaMatch[1].trim() 
+    : '';
+
+  const marketValidation = validacaoMatch
+    ? validacaoMatch[1].trim()
+    : '';
+
+  const suggestions = sugestoesMatch
+    ? sugestoesMatch[1].split('\n').filter((s: string) => s.trim().startsWith('-')).map((s: string) => s.trim().substring(1).trim())
+    : [];
+
+  return { estimate, reasoning, suggestions, marketValidation };
+}
 
 export async function POST(request: NextRequest) {
   try {
     const projectData: ProjectData = await request.json();
     
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('API Key não configurada');
+    console.log("📊 Iniciando cálculo de estimativa...", Object.keys(projectData));
+
+    // Tentar usar IA primeiro
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        console.log("🤖 Tentando cálculo com IA Gemini...");
+        const aiResult = await calculateAIEstimate(projectData);
+        
+        if (aiResult.estimate > 0) {
+          console.log("✅ Estimativa IA calculada:", aiResult.estimate);
+          return NextResponse.json({
+            estimate: aiResult.estimate,
+            reasoning: aiResult.reasoning,
+            suggestions: aiResult.suggestions,
+            marketValidation: aiResult.marketValidation,
+            source: 'ai'
+          });
+        } else {
+          throw new Error('IA retornou estimativa inválida');
+        }
+      } catch (aiError) {
+        console.log("❌ Erro na IA, usando cálculo offline:", aiError);
+      }
+    } else {
+      console.log("⚠️ GEMINI_API_KEY não configurada, usando cálculo offline");
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    // Criar descrição detalhada do projeto
-    const projectDescription = Object.entries(projectData)
-      .map(([key, value]: [string, ProjectDataValue]) => `${key}: ${value.label}`)
-      .join('\n');
-
-    const prompt = `
-Como especialista sênior em precificação de projetos de desenvolvimento de software no Brasil, analise os seguintes dados do projeto:
-
-${projectDescription}
-
-Por favor, forneça uma análise completa incluindo:
-
-1. ESTIMATIVA DE PREÇO em reais (R$) baseada no mercado brasileiro atual (2024)
-2. JUSTIFICATIVA TÉCNICA detalhada para o valor proposto
-3. VALIDAÇÃO DE MERCADO comparando com preços praticados no Brasil
-4. 5 SUGESTÕES práticas para otimizar o projeto
-
-Considere fatores essenciais como:
-- Complexidade técnica e arquitetural
-- Tempo estimado de desenvolvimento
-- Tamanho e experiência da equipe
-- Urgência e pressão de prazo
-- Infraestrutura e tecnologias necessárias
-- Custos de manutenção e hospedagem
-- Padrões de preço do mercado brasileiro
-- Região (interior vs capitais)
-- Perfil do cliente (startup vs empresa consolidada)
-
-IMPORTANTE: 
-- Valores devem estar alinhados com a realidade brasileira
-- Considere tanto freelancers quanto agências
-- Inclua análise de custo-benefício
-- Seja realista com prazos e recursos
-
-Formato de resposta OBRIGATÓRIO:
-ESTIMATIVA: R$ [valor]
-JUSTIFICATIVA: [explicação técnica detalhada de 2-3 parágrafos]
-VALIDACAO_MERCADO: [análise comparativa com mercado brasileiro]
-SUGESTOES:
-- [sugestão 1]
-- [sugestão 2] 
-- [sugestão 3]
-- [sugestão 4]
-- [sugestão 5]
-`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse da resposta
-    const estimateMatch = text.match(/ESTIMATIVA:\s*R\$\s*([\d.,]+)/);
-    const justificativaMatch = text.match(/JUSTIFICATIVA:\s*([\s\S]*?)(?=VALIDACAO_MERCADO:|$)/);
-    const validacaoMatch = text.match(/VALIDACAO_MERCADO:\s*([\s\S]*?)(?=SUGESTOES:|$)/);
-    const sugestoesMatch = text.match(/SUGESTOES:\s*((?:- .*(?:\n|$))*)/);
-
-    const estimate = estimateMatch 
-      ? parseInt(estimateMatch[1].replace(/[.,]/g, '')) 
-      : calculateFallbackEstimate(projectData);
-
-    const reasoning = justificativaMatch 
-      ? justificativaMatch[1].trim() 
-      : 'Estimativa baseada em análise técnica detalhada considerando complexidade, prazo, equipe e padrões de mercado do desenvolvimento brasileiro. O valor reflete custos operacionais, margem de lucro adequada e qualidade esperada.';
-
-    const marketValidation = validacaoMatch
-      ? validacaoMatch[1].trim()
-      : 'Valor compatível com a média praticada no mercado brasileiro. Projetos similares variam entre 70% a 130% deste valor dependendo da região e especialização da equipe.';
-
-    const suggestions = sugestoesMatch
-      ? sugestoesMatch[1].split('\n').filter(s => s.trim().startsWith('-')).map(s => s.trim().substring(1).trim())
-      : [
-          'Divida o projeto em sprints/fases para facilitar pagamento e controle',
-          'Utilize tecnologias consolidadas para reduzir riscos técnicos',
-          'Mantenha comunicação constante e transparente com o cliente',
-          'Documente bem o projeto para facilitar manutenção futura',
-          'Considere um valor adicional (10-20%) para imprevistos e mudanças'
-        ];
-
+    // Fallback para cálculo offline
+    const offlineResult = calculateOfflineEstimate(projectData);
+    
     return NextResponse.json({
-      estimate,
-      reasoning,
-      suggestions,
-      marketValidation
+      estimate: offlineResult.estimate,
+      reasoning: offlineResult.reasoning,
+      suggestions: offlineResult.suggestions,
+      breakdown: offlineResult.breakdown,
+      marketValidation: `Valor compatível com a média praticada no mercado brasileiro. 
+        Projetos similares variam entre R$ ${Math.round(offlineResult.estimate * 0.7).toLocaleString('pt-BR')} 
+        a R$ ${Math.round(offlineResult.estimate * 1.3).toLocaleString('pt-BR')} dependendo da região e especialização da equipe.`,
+      source: 'offline'
     });
 
   } catch (error) {
-    console.error('Erro ao gerar estimativa:', error);
+    console.error('❌ Erro geral na API de estimativa:', error);
     
-    // Obter dados do request para fallback
-    let fallbackProjectData: ProjectData;
-    try {
-      fallbackProjectData = await request.json();
-    } catch {
-      fallbackProjectData = {};
-    }
-    
-    const fallbackEstimate = calculateFallbackEstimate(fallbackProjectData);
-    
+    // Fallback de emergência
     return NextResponse.json({
-      estimate: fallbackEstimate,
-      reasoning: 'Estimativa calculada com base em parâmetros técnicos padrão e experiência de mercado brasileiro. Considera complexidade técnica, tempo de desenvolvimento e recursos necessários.',
+      estimate: 5000,
+      reasoning: 'Estimativa padrão aplicada devido a erro no sistema. Recomendamos nova análise com dados mais específicos.',
       suggestions: [
-        'Defina escopo detalhado antes de iniciar o desenvolvimento',
-        'Use metodologias ágeis (Scrum/Kanban) para melhor controle',
-        'Considere custos de hospedagem, domínio e certificados SSL',
-        'Planeje tempo extra para testes e ajustes finais',
-        'Estabeleça marcos de pagamento vinculados às entregas'
+        'Refaça a estimativa com dados mais detalhados',
+        'Considere consultar um especialista para projetos complexos',
+        'Valide requisitos antes de iniciar desenvolvimento',
+        'Planeje fases de entrega para reduzir riscos',
+        'Reserve orçamento adicional para imprevistos'
       ],
-      marketValidation: 'Valor alinhado com práticas de mercado brasileiro. Projetos similares costumam variar de 70% a 130% deste valor dependendo da região, experiência da equipe e urgência do cliente.'
+      marketValidation: 'Valor padrão baseado em projetos similares no mercado brasileiro.',
+      source: 'fallback'
     });
   }
 }
 
-function calculateFallbackEstimate(projectData: ProjectData): number {
-  const baseValue = 1500; // Valor base mais realista para o mercado brasileiro
-  let multiplier = 1;
-  
-  Object.values(projectData).forEach((answer: ProjectDataValue) => {
-    if (answer && answer.multiplier) {
-      multiplier *= answer.multiplier;
-    }
-  });
-  
-  return Math.round(baseValue * multiplier);
-}
