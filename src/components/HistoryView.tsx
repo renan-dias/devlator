@@ -158,6 +158,7 @@ export default function HistoryView() {
                     ["Horas", (r: EstimateRecord) => `${r.result.hours.likely}h`],
                     ["Valor-hora", (r: EstimateRecord) => formatBRL(r.result.rate.value)],
                     ["Prazo", (r: EstimateRecord) => `${r.result.timeline.weeks} sem.`],
+                    ["Ferramentas de IA", (r: EstimateRecord) => (r.result.ai ? `${formatBRL(r.result.ai.cost.total)}${r.result.ai.passThrough ? "" : " (absorvido)"}` : "—")],
                     ["Mercado", (r: EstimateRecord) => POSITION[r.result.market.position].label],
                   ].map(([label, fn]) => (
                     <tr key={label as string} className="border-t border-line/60">

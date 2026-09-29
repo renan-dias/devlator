@@ -18,6 +18,7 @@ export default function Footer() {
         <nav aria-label="Rodapé" className="grid grid-cols-2 gap-2 text-muted">
           <Link href="/calculadora" className="hover:text-fg">Calculadora de projeto</Link>
           <Link href="/valor-hora" className="hover:text-fg">Calculadora de valor-hora</Link>
+          <Link href="/hospedagem" className="hover:text-fg">Comparativo de hospedagem</Link>
           <Link href="/chat" className="hover:text-fg">Chat com IA</Link>
           <Link href="/historico" className="hover:text-fg">Histórico</Link>
           <Link href="/sobre" className="hover:text-fg">Metodologia</Link>

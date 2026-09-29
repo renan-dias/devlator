@@ -283,6 +283,18 @@ export const QUESTIONS: Question[] = [
     ],
   },
   {
+    id: "ia",
+    question: "Vai usar IA para programar?",
+    help: "O custo das ferramentas pode ser repassado ao cliente. Você ajusta ferramentas e planos no resultado.",
+    category: "Você",
+    options: [
+      { value: "nao", label: "Não", description: "Sem ferramentas de IA pagas", effect: {} },
+      { value: "assistente", label: "Assistente no editor", description: "Autocompletar e chat (ex.: Copilot Pro, US$ 10/mês)", effect: {} },
+      { value: "agente", label: "Agente de código", description: "Agente que edita o projeto (ex.: Cursor Pro, US$ 20/mês)", effect: {} },
+      { value: "vibecoding", label: "Vibecoding", description: "App gerado por prompts (ex.: Lovable Pro + Claude Pro, ~R$ 240/mês)", effect: {} },
+    ],
+  },
+  {
     id: "equipe",
     question: "Quantas pessoas vão trabalhar no projeto?",
     help: "Equipes maiores entregam antes, mas há custo de coordenação.",

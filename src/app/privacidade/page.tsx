@@ -32,6 +32,10 @@ export default function PrivacidadePage() {
             <strong className="text-fg">Minha região:</strong> ao ativar, seu IP é consultado no serviço ip-api.com para estimar cidade e estado.
           </li>
           <li>
+            <strong className="text-fg">Cotação do dólar:</strong> para converter ferramentas de IA cobradas em dólar, o servidor consulta a AwesomeAPI. Nenhum dado seu é
+            enviado.
+          </li>
+          <li>
             <strong className="text-fg">Site de referência:</strong> o servidor acessa a URL informada para extrair título e estrutura da página.
           </li>
         </ul>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MARKET_SOURCES, MARKET_UPDATED_AT, PROJECT_TYPES, REGIONS, SENIORITY, formatBRL } from "@/lib/market-data";
+import { AI_PRICES_UPDATED_AT, AI_SOURCES } from "@/lib/ai-tools";
+import { HOSTING_SOURCES, HOSTING_UPDATED_AT } from "@/lib/hosting-data";
 
 export const metadata: Metadata = {
   title: "Metodologia e fontes",
@@ -16,6 +18,7 @@ const STEPS = [
   ["Equipe", "Mais pessoas reduzem o prazo, mas adicionam horas de coordenação (8% a 22%)."],
   ["Valor-hora", "Usamos o seu valor-hora ou a média de mercado da sua senioridade, ajustada pela região dos seus clientes."],
   ["Risco e urgência", "Uma reserva de contingência (5% a 35%) cobre escopo indefinido. Prazos apertados recebem adicional de urgência (10% a 50%)."],
+  ["Ferramentas de IA (opcional)", "Se você usa IA para programar, as assinaturas (Copilot, Cursor, Claude, ChatGPT, Lovable, Bolt, v0, Replit) entram pelo período do projeto. Planos em dólar usam o câmbio do dia e IOF de 3,5%. Você escolhe repassar ao cliente ou absorver, e pode ajustar o efeito da IA nas horas — que começa em 0% porque os estudos divergem."],
   ["Impostos", "O preço final é bruto: o valor líquido é dividido por (1 − alíquota), para que você receba o que planejou depois da nota fiscal."],
   ["Comparação", "O resultado é posicionado nas faixas públicas de preço do tipo de projeto e o seu valor-hora nas faixas do seu perfil."],
 ];
@@ -43,7 +46,7 @@ export default function SobrePage() {
       </ol>
 
       <div className="card mt-8 p-5 font-mono text-sm text-muted">
-        preço = (horas-base × escopo + horas fixas) × (1 + ajustes) × (1 + coordenação) × valor-hora × (1 + urgência) × (1 + contingência) ÷ (1 − impostos)
+        preço = [(horas-base × escopo + horas fixas) × (1 + ajustes) × (1 + coordenação) × (1 − efeito da IA) × valor-hora × (1 + urgência) × (1 + contingência) + ferramentas de IA repassadas] ÷ (1 − impostos)
       </div>
 
       <h2 className="mt-12 text-2xl font-bold">Parâmetros atuais</h2>
@@ -107,6 +110,24 @@ export default function SobrePage() {
             <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-cyan underline-offset-2 hover:underline">
               {s.label}
             </a>
+          </li>
+        ))}
+      </ul>
+
+      <h3 className="mt-8 font-semibold">Ferramentas de IA — preços de {AI_PRICES_UPDATED_AT}</h3>
+      <ul className="mt-3 space-y-2 text-sm">
+        {AI_SOURCES.map((s) => (
+          <li key={s.url}>
+            <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-cyan underline-offset-2 hover:underline">{s.label}</a>
+          </li>
+        ))}
+      </ul>
+
+      <h3 className="mt-8 font-semibold">Hospedagem — preços de {HOSTING_UPDATED_AT}</h3>
+      <ul className="mt-3 space-y-2 text-sm">
+        {HOSTING_SOURCES.map((s) => (
+          <li key={s.url}>
+            <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-cyan underline-offset-2 hover:underline">{s.label}</a>
           </li>
         ))}
       </ul>

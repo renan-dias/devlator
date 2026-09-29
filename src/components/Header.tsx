@@ -3,11 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FaBars, FaCalculator, FaClock, FaComments, FaHistory, FaTimes } from "react-icons/fa";
+import { FaBars, FaCalculator, FaClock, FaComments, FaHistory, FaServer, FaTimes } from "react-icons/fa";
 
 const NAV = [
   { href: "/calculadora", label: "Calculadora", icon: FaCalculator },
   { href: "/valor-hora", label: "Valor-hora", icon: FaClock },
+  { href: "/hospedagem", label: "Hospedagem", icon: FaServer },
   { href: "/chat", label: "Chat IA", icon: FaComments },
   { href: "/historico", label: "Histórico", icon: FaHistory },
 ];

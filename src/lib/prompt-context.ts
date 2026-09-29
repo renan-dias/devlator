@@ -32,5 +32,9 @@ ESTIMATIVA CALCULADA PELO DEVLATOR:
 - Preço recomendado: ${formatBRL(result.price.recommended)} (faixa ${formatBRL(result.price.min)}–${formatBRL(result.price.max)})
 - Prazo estimado: ${result.timeline.weeks} semanas com ${result.timeline.people} pessoa(s) a ${result.timeline.weeklyHours}h/semana${result.timeline.feasible ? "" : " — NÃO cabe no prazo pedido"}
 - Contingência: ${Math.round(result.factors.contingency * 100)}% · Urgência: +${Math.round(result.factors.urgency * 100)}% · Impostos: ${Math.round(result.factors.taxRate * 100)}%
-- Faixa de mercado para o tipo: ${formatBRL(result.market.range.min)}–${formatBRL(result.market.range.max)} (posição: ${result.market.position === "within" ? "dentro" : result.market.position === "below" ? "abaixo" : "acima"})`;
+${
+    result.ai
+      ? `- Ferramentas de IA: ${result.ai.cost.lines.map((l) => l.label).join(", ")} — ${formatBRL(result.ai.cost.brlMonthly)}/mês por ${result.ai.cost.months} mês(es) = ${formatBRL(result.ai.cost.total)} (${result.ai.passThrough ? "repassado ao cliente" : "absorvido pelo dev"})${result.ai.productivity ? `; efeito nas horas: ${Math.round(-result.ai.productivity * 100)}%` : ""}\n`
+      : ""
+  }- Faixa de mercado para o tipo: ${formatBRL(result.market.range.min)}–${formatBRL(result.market.range.max)} (posição: ${result.market.position === "within" ? "dentro" : result.market.position === "below" ? "abaixo" : "acima"})`;
 }

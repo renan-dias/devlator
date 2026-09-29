@@ -155,8 +155,6 @@ export const DEFAULT_TAX_RATE = 0.06;
 /** Custos recorrentes típicos (repassados ao cliente). */
 export const RECURRING_COSTS = [
   { label: "Domínio .com.br", value: "R$ 40–80/ano" },
-  { label: "Hospedagem compartilhada", value: "R$ 15–50/mês" },
-  { label: "Cloud / VPS", value: "R$ 100–500/mês" },
   { label: "Certificado SSL", value: "Grátis (Let's Encrypt)" },
   { label: "Loja de apps", value: "US$ 99/ano (Apple) + US$ 25 único (Google)" },
 ];
