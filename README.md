@@ -1,77 +1,68 @@
-# Devlator - Calculadora para DEVs
+# Devlator — calculadora de preço de projetos para devs
 
-Devlator é uma aplicação profissional desenvolvida com Next.js, projetada para facilitar estimativas de projetos de software. Com uma interface inspirada em IDEs modernas, utiliza conceitos de glassmorphism, animações suaves e transições elegantes para proporcionar uma experiência única para desenvolvedores.
+Descubra quanto cobrar por um site, app, e-commerce, API ou sistema. O Devlator estima **horas, valor-hora, prazo e impostos** e compara o resultado com a **média do mercado brasileiro**.
 
-![Devlator Screenshot](./public/preview.png)
+![Devlator](./public/preview.png)
 
-## ✨ Funcionalidades
+## Funcionalidades
 
-- **Quiz interativo** para estimativas rápidas e precisas de projetos
-- **Tabela de resultados** detalhada e fácil de interpretar
-- **Chatbot Devinho** integrado (baseado na GeminiAPI) para tirar dúvidas técnicas
-- **Persistência local** dos dados do usuário (localStorage)
-- **UI moderna** com Tailwind CSS e design responsivo
-- **SEO otimizado** para melhor indexação
-- **Imagens ilustrativas públicas** e ícones vetoriais (sem emojis)
-- **Componentização**: estrutura modular e reutilizável
-- **Acessibilidade**: navegação por teclado e contraste aprimorado
+- **Calculadora de projeto**: questionário adaptativo (as perguntas mudam conforme o tipo de projeto), com o impacto de cada resposta visível (`+16h`, `+20%`…).
+- **Comparação com o mercado**: seu preço e seu valor-hora posicionados nas faixas praticadas por freelancers e agências.
+- **Simulador "E se eu cobrar…"**: mude valor-hora, senioridade, região e impostos e veja o preço recalcular na hora.
+- **Prazo realista**: semanas calculadas pela equipe e dedicação, com alerta quando o prazo do cliente não fecha.
+- **Calculadora de valor-hora** (`/valor-hora`): a partir da renda desejada, custos, impostos, férias e 13º.
+- **Proposta em PDF ou texto**, com escopo, fases, manutenção e condições de pagamento.
+- **Chat com IA (Devinho)**: recebe a estimativa como contexto e aceita imagem do design, site de referência, documentos e região.
+- **Tudo salvo localmente**: perfil, rascunho em andamento, histórico de estimativas (com comparação, exportação e importação) e conversas.
+- **Favicon animado** enquanto calcula ou enquanto a IA responde.
+- **SEO**: metadata por página, Open Graph gerado, sitemap, robots, manifest, JSON-LD (WebApplication, FAQ, HowTo).
 
-## 🚀 Tecnologias Utilizadas
-
-- [Next.js](https://nextjs.org/)
-- [React](https://react.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [GeminiAPI](https://ai.google.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [ESLint](https://eslint.org/)
-
-## 📦 Scripts Disponíveis
-
-- `npm run dev` — Inicia o servidor de desenvolvimento
-- `npm run build` — Gera a build de produção
-- `npm run start` — Inicia o servidor em produção
-- `npm run lint` — Executa o linter
-
-## 🛠️ Como rodar localmente
-
-1. Clone o repositório:
-    ```bash
-    git clone https://github.com/seu-usuario/devlator.git
-    cd devlator
-    ```
-2. Instale as dependências:
-    ```bash
-    npm install
-    ```
-3. Inicie o servidor de desenvolvimento:
-    ```bash
-    npm run dev
-    ```
-4. Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
-
-## 📁 Estrutura do Projeto
+## Como o preço é calculado
 
 ```
-devlator/
-├── public/
-│   └── devlator-preview.png
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── styles/
-│   └── utils/
-├── package.json
-└── README.md
+preço = (horas-base × escopo + horas fixas) × (1 + ajustes) × (1 + coordenação)
+        × valor-hora × (1 + urgência) × (1 + contingência) ÷ (1 − impostos)
 ```
 
-## 🤝 Contribuição
+O cálculo é determinístico e roda no navegador ([src/lib/estimator.ts](src/lib/estimator.ts)). A IA não define o número: só comenta, sugere e aponta riscos.
+As referências de mercado e as fontes ficam em [src/lib/market-data.ts](src/lib/market-data.ts) e são exibidas em `/sobre`.
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+## Rodando localmente
 
-## 📄 Licença
+```bash
+npm install
+cp .env.example .env.local   # opcional: coloque sua GEMINI_API_KEY
+npm run dev
+```
 
-Este projeto está licenciado sob a [MIT License](LICENSE).
+Acesse http://localhost:3000. Sem `GEMINI_API_KEY` a calculadora funciona normalmente; só o chat fica indisponível.
 
----
+| Variável | Uso |
+| --- | --- |
+| `GEMINI_API_KEY` | Análise e chat com IA (opcional) |
+| `GEMINI_MODEL` | Modelo do Gemini (padrão `gemini-2.5-flash`) |
+| `NEXT_PUBLIC_SITE_URL` | URL pública para canonical, sitemap e Open Graph |
 
-Projeto iniciado com [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Estrutura
+
+```
+src/
+├── app/                 # rotas (App Router), APIs, sitemap, robots, OG image
+│   └── api/             # analysis, chat, location, webscrape
+├── components/
+│   └── calculator/      # passos da calculadora e tela de resultado
+└── lib/
+    ├── market-data.ts   # faixas de mercado, valor-hora, regiões, fontes
+    ├── questions.ts     # perguntas e o efeito de cada resposta
+    ├── estimator.ts     # motor de cálculo
+    ├── storage.ts       # persistência local
+    └── useAnimatedFavicon.ts
+```
+
+## Stack
+
+Next.js 15 · React 19 · Tailwind CSS 4 · TypeScript · Google Gemini · jsPDF
+
+## Licença
+
+MIT

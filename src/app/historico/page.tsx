@@ -1,12 +1,22 @@
-'use client';
-import ChatHistory from "@/components/ChatHistory";
+import type { Metadata } from "next";
+import HistoryView from "@/components/HistoryView";
+
+export const metadata: Metadata = {
+  title: "Histórico de estimativas",
+  description: "Suas estimativas e conversas salvas localmente no navegador. Compare projetos, exporte e importe backups.",
+  alternates: { canonical: "/historico" },
+  robots: { index: false, follow: true },
+};
 
 export default function HistoricoPage() {
   return (
-    <section className="w-full max-w-2xl mx-auto p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-8">
-      <h1 className="text-2xl font-bold text-[#bd93f9] mb-4 text-center">Histórico de Conversas</h1>
-      <ChatHistory />
-      <div className="text-xs text-[#f1fa8c] mt-4 text-center">Aqui ficam salvas suas conversas anteriores com o Devinho.</div>
-    </section>
+    <>
+      <div className="mb-8">
+        <p className="eyebrow">Salvo neste navegador</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Histórico</h1>
+        <p className="mt-2 text-muted">Tudo fica no seu dispositivo. Exporte um backup para levar a outro navegador.</p>
+      </div>
+      <HistoryView />
+    </>
   );
 }
