@@ -1,336 +1,193 @@
-'use client';
-import React, { useState } from "react";
-import { FaImage, FaGlobe, FaFileAlt, FaMapMarkerAlt, FaPlus } from "react-icons/fa";
+"use client";
+import Image from "next/image";
+import { useState } from "react";
+import { FaFileAlt, FaGlobe, FaImage, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
 import Modal, { useModal } from "./Modal";
 
-export type ChatContextOption = {
-  label: string;
-  value: string;
-  description: string;
-  icon: React.ReactElement;
-  needsModal?: boolean;
-};
-
-interface ContextData {
-  figma?: { image: string };
-  site?: { url: string; content: string; analysis: string };
-  doc?: { files: File[]; analysis?: string };
-  regional?: { city: string; state: string; country: string; timezone: string };
-  error?: { message: string };
+export interface ChatExtras {
+  regional?: { city: string; state: string };
+  site?: { url: string; content: string };
+  docs?: Array<{ name: string; text?: string }>;
+  figmaImage?: string;
 }
 
-export const CONTEXT_OPTIONS: ChatContextOption[] = [
-  { 
-    label: "Captura do Figma", 
-    value: "figma", 
-    description: "Envie uma imagem do seu design para análise",
-    icon: <FaImage className="text-[#ff79c6]" />,
-    needsModal: true
-  },
-  { 
-    label: "Site de exemplo", 
-    value: "site", 
-    description: "Analise um site de referência para comparação",
-    icon: <FaGlobe className="text-[#8be9fd]" />,
-    needsModal: true
-  },
-  { 
-    label: "Documentação", 
-    value: "doc", 
-    description: "Envie documentos ou PDFs para análise",
-    icon: <FaFileAlt className="text-[#f1fa8c]" />,
-    needsModal: true
-  },
-  { 
-    label: "Contexto regional", 
-    value: "regional", 
-    description: "Use sua localização para ajustar preços regionais",
-    icon: <FaMapMarkerAlt className="text-[#50fa7b]" />,
-    needsModal: false
-  },
-];
-
-interface ChatContextSelectorProps {
-  selected: string[];
-  onChange: (values: string[]) => void;
-  onContextData?: (type: string, data: ContextData[keyof ContextData]) => void;
+interface Props {
+  extras: ChatExtras;
+  onChange: (extras: ChatExtras) => void;
+  onError: (message: string) => void;
 }
 
-export default function ChatContextSelector({ selected, onChange, onContextData }: ChatContextSelectorProps) {
-  const { isOpen: isFigmaOpen, openModal: openFigma, closeModal: closeFigma } = useModal();
-  const { isOpen: isSiteOpen, openModal: openSite, closeModal: closeSite } = useModal();
-  const { isOpen: isDocOpen, openModal: openDoc, closeModal: closeDoc } = useModal();
-  
-  const [siteUrl, setSiteUrl] = useState('');
-  const [isLoadingSite, setIsLoadingSite] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+const MAX_DOC_CHARS = 12000;
 
-  const toggle = async (value: string) => {
-    const option = CONTEXT_OPTIONS.find(opt => opt.value === value);
-    
-    if (selected.includes(value)) {
-      onChange(selected.filter((v) => v !== value));
-      return;
-    }
+/** Reduz a imagem para no máx. 1600px e JPEG, para caber no limite da API. */
+function downscaleImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => reject(new Error("Imagem inválida"));
+    img.src = url;
+  });
+}
 
-    if (option?.needsModal) {
-      switch (value) {
-        case 'figma':
-          openFigma();
-          break;
-        case 'site':
-          openSite();
-          break;
-        case 'doc':
-          openDoc();
-          break;
-      }
-    } else {
-      if (value === 'regional') {
-        await handleRegionalContext();
-      }
-      onChange([...selected, value]);
-    }
+export default function ChatContextSelector({ extras, onChange, onError }: Props) {
+  const figma = useModal();
+  const site = useModal();
+  const doc = useModal();
+  const [siteUrl, setSiteUrl] = useState("");
+  const [loading, setLoading] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const remove = (key: keyof ChatExtras) => {
+    const next = { ...extras };
+    delete next[key];
+    onChange(next);
   };
 
-  const handleRegionalContext = async () => {
+  const addRegional = async () => {
+    setLoading("regional");
     try {
-      const response = await fetch('/api/location');
-      const locationData = await response.json();
-      onContextData?.('regional', locationData);
-    } catch (error) {
-      console.error('Erro ao obter localização:', error);
-    }
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSiteSubmit = async () => {
-    if (!siteUrl.trim()) return;
-    
-    setIsLoadingSite(true);
-    try {
-      const response = await fetch('/api/webscrape', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: siteUrl })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        onContextData?.('site', { 
-          url: siteUrl,
-          content: result.data.content || '',
-          analysis: result.data.analysis || 'Site analisado com sucesso'
-        });
-        onChange([...selected, 'site']);
-        closeSite();
-        setSiteUrl('');
-      } else {
-        onContextData?.('error', { message: `Erro: ${result.error}` });
-      }
+      const res = await fetch("/api/location");
+      const data = await res.json();
+      onChange({ ...extras, regional: { city: data.city, state: data.state } });
     } catch {
-      onContextData?.('error', { message: 'Erro ao analisar o site. Verifique a URL e tente novamente.' });
+      onError("Não consegui identificar sua localização.");
     } finally {
-      setIsLoadingSite(false);
+      setLoading(null);
     }
   };
 
-  const handleFigmaSubmit = () => {
-    if (imagePreview) {
-      onContextData?.('figma', { image: imagePreview });
-      onChange([...selected, 'figma']);
-      closeFigma();
-      setImagePreview(null);
+  const submitSite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!siteUrl.trim()) return;
+    setLoading("site");
+    try {
+      const res = await fetch("/api/webscrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: siteUrl }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Falha ao analisar");
+      onChange({ ...extras, site: { url: result.data.url, content: result.data.content } });
+      setSiteUrl("");
+      site.closeModal();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Erro ao analisar o site.");
+    } finally {
+      setLoading(null);
     }
   };
 
-  const handleDocSubmit = () => {
-    if (selectedFiles.length > 0) {
-      onContextData?.('doc', { files: selectedFiles });
-      onChange([...selected, 'doc']);
-      closeDoc();
-      setSelectedFiles([]);
+  const pickImage = async (file?: File) => {
+    if (!file?.type.startsWith("image/")) return;
+    try {
+      setPreview(await downscaleImage(file));
+    } catch {
+      onError("Não consegui ler essa imagem.");
     }
   };
+
+  const pickDocs = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const docs = await Promise.all(
+      Array.from(files).map(async (f) => ({
+        name: f.name,
+        text: /\.(txt|md|markdown|csv|json)$/i.test(f.name) ? (await f.text()).slice(0, MAX_DOC_CHARS) : undefined,
+      })),
+    );
+    onChange({ ...extras, docs });
+    doc.closeModal();
+  };
+
+  const OPTIONS = [
+    { key: "figmaImage" as const, label: "Imagem do design", icon: FaImage, active: !!extras.figmaImage, onAdd: figma.openModal, detail: "imagem anexada" },
+    { key: "site" as const, label: "Site de referência", icon: FaGlobe, active: !!extras.site, onAdd: site.openModal, detail: extras.site?.url },
+    { key: "docs" as const, label: "Requisitos", icon: FaFileAlt, active: !!extras.docs?.length, onAdd: doc.openModal, detail: `${extras.docs?.length ?? 0} arquivo(s)` },
+    { key: "regional" as const, label: "Minha região", icon: FaMapMarkerAlt, active: !!extras.regional, onAdd: addRegional, detail: extras.regional && `${extras.regional.city}, ${extras.regional.state}` },
+  ];
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 my-4">
-        {CONTEXT_OPTIONS.map((opt) => {
-          const isSelected = selected.includes(opt.value);
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              className={`flex flex-col items-center gap-2 p-3 rounded-lg border text-xs transition-all ${
-                isSelected 
-                  ? "bg-[#bd93f9]/20 border-[#bd93f9] text-[#bd93f9]" 
-                  : "bg-[#44475a] border-[#6272a4] text-[#f8f8f2] hover:bg-[#6272a4] hover:border-[#bd93f9]"
-              }`}
-              title={opt.description}
-              onClick={() => toggle(opt.value)}
-            >
-              <div className="text-lg">{opt.icon}</div>
-              <span className="font-medium">{opt.label}</span>
-              {opt.needsModal && !isSelected && (
-                <FaPlus className="text-xs opacity-50" />
-              )}
+      <div className="flex flex-wrap gap-2" aria-label="Contexto adicional">
+        {OPTIONS.map(({ key, label, icon: Icon, active, onAdd, detail }) =>
+          active ? (
+            <span key={key} className="chip !border-purple/50 !bg-purple/10 !text-fg">
+              <Icon className="text-purple" aria-hidden />
+              <span className="max-w-[160px] truncate">{detail}</span>
+              <button onClick={() => remove(key)} aria-label={`Remover ${label}`} className="ml-1 text-subtle hover:text-red">
+                <FaTimes aria-hidden />
+              </button>
+            </span>
+          ) : (
+            <button key={key} type="button" onClick={onAdd} disabled={loading === key} className="chip hover:border-purple/50 hover:text-fg">
+              <Icon aria-hidden /> {loading === key ? "Carregando…" : `+ ${label}`}
             </button>
-          );
-        })}
+          ),
+        )}
       </div>
 
-      {/* Modal Figma */}
-      <Modal isOpen={isFigmaOpen} onClose={closeFigma} title="Enviar Captura do Figma">
+      <Modal isOpen={figma.isOpen} onClose={figma.closeModal} title="Enviar imagem do design">
         <div className="space-y-4">
-          <p className="text-[#f8f8f2] text-sm">
-            Envie uma imagem da sua tela do Figma para que o Devinho possa analisar o design e dar sugestões mais precisas.
-          </p>
-          
-          <div className="border-2 border-dashed border-[#6272a4] rounded-lg p-6 text-center">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-              id="figma-upload"
-            />
-            <label htmlFor="figma-upload" className="cursor-pointer">
-              {imagePreview ? (
-                <div className="space-y-2">
-                  <img src={imagePreview} alt="Preview" className="max-h-40 mx-auto rounded" />
-                  <p className="text-[#50fa7b] text-sm">Imagem carregada! Clique para trocar.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <FaImage className="text-3xl text-[#6272a4] mx-auto" />
-                  <p className="text-[#f8f8f2]">Clique para selecionar uma imagem</p>
-                  <p className="text-[#6272a4] text-xs">PNG, JPG ou WebP</p>
-                </div>
-              )}
-            </label>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={closeFigma}
-              className="flex-1 px-4 py-2 bg-[#6272a4] text-[#f8f8f2] rounded-lg hover:bg-[#44475a] transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleFigmaSubmit}
-              disabled={!imagePreview}
-              className="flex-1 px-4 py-2 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Enviar
-            </button>
-          </div>
+          <p className="text-sm text-muted">Envie um print do Figma ou do layout. O Devinho avalia telas, componentes e complexidade visual.</p>
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-line p-6 text-center hover:border-purple/60">
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => pickImage(e.target.files?.[0])} />
+            {preview ? (
+              <>
+                <Image src={preview} alt="Pré-visualização do design" width={320} height={200} unoptimized className="max-h-48 w-auto rounded-lg object-contain" />
+                <span className="text-sm text-green">Imagem pronta. Clique para trocar.</span>
+              </>
+            ) : (
+              <>
+                <FaImage className="text-3xl text-subtle" aria-hidden />
+                <span>Selecionar imagem</span>
+                <span className="text-xs text-subtle">PNG, JPG ou WebP</span>
+              </>
+            )}
+          </label>
+          <button
+            className="btn-primary w-full"
+            disabled={!preview}
+            onClick={() => {
+              onChange({ ...extras, figmaImage: preview! });
+              setPreview(null);
+              figma.closeModal();
+            }}
+          >
+            Anexar à conversa
+          </button>
         </div>
       </Modal>
 
-      {/* Modal Site */}
-      <Modal isOpen={isSiteOpen} onClose={closeSite} title="Analisar Site de Exemplo">
-        <div className="space-y-4">
-          <p className="text-[#f8f8f2] text-sm">
-            Cole a URL de um site que você gostaria de usar como referência. Vamos analisar o conteúdo para ajudar na precificação.
-          </p>
-          
-          <div className="space-y-2">
-            <label className="block text-[#f1fa8c] text-sm font-medium">URL do Site:</label>
-            <input
-              type="url"
-              value={siteUrl}
-              onChange={(e) => setSiteUrl(e.target.value)}
-              placeholder="https://exemplo.com"
-              className="w-full px-3 py-2 bg-[#282a36] border border-[#44475a] rounded-lg text-[#f8f8f2] placeholder-[#6272a4] focus:outline-none focus:border-[#bd93f9] focus:ring-1 focus:ring-[#bd93f9]"
-            />
+      <Modal isOpen={site.isOpen} onClose={site.closeModal} title="Site de referência">
+        <form onSubmit={submitSite} className="space-y-4">
+          <p className="text-sm text-muted">Cole o endereço de um site parecido com o que você vai construir. Extraímos estrutura, seções e tecnologias.</p>
+          <div>
+            <label htmlFor="site-url" className="label">URL</label>
+            <input id="site-url" type="text" inputMode="url" className="input" placeholder="exemplo.com.br" value={siteUrl} onChange={(e) => setSiteUrl(e.target.value)} />
           </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={closeSite}
-              className="flex-1 px-4 py-2 bg-[#6272a4] text-[#f8f8f2] rounded-lg hover:bg-[#44475a] transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSiteSubmit}
-              disabled={!siteUrl.trim() || isLoadingSite}
-              className="flex-1 px-4 py-2 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoadingSite ? 'Analisando...' : 'Analisar'}
-            </button>
-          </div>
-        </div>
+          <button type="submit" className="btn-primary w-full" disabled={!siteUrl.trim() || loading === "site"}>
+            {loading === "site" ? "Analisando…" : "Analisar site"}
+          </button>
+        </form>
       </Modal>
 
-      {/* Modal Documentação */}
-      <Modal isOpen={isDocOpen} onClose={closeDoc} title="Enviar Documentação">
+      <Modal isOpen={doc.isOpen} onClose={doc.closeModal} title="Documentos de requisitos">
         <div className="space-y-4">
-          <p className="text-[#f8f8f2] text-sm">
-            Envie documentos, PDFs ou arquivos de texto que possam ajudar na análise do projeto.
-          </p>
-          
-          <div className="border-2 border-dashed border-[#6272a4] rounded-lg p-6 text-center">
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.txt,.md"
-              onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
-              className="hidden"
-              id="doc-upload"
-            />
-            <label htmlFor="doc-upload" className="cursor-pointer">
-              {selectedFiles.length > 0 ? (
-                <div className="space-y-2">
-                  <FaFileAlt className="text-3xl text-[#50fa7b] mx-auto" />
-                  <p className="text-[#50fa7b] text-sm">
-                    {selectedFiles.length} arquivo(s) selecionado(s)
-                  </p>
-                  <div className="text-xs text-[#f8f8f2]">
-                    {selectedFiles.map(file => file.name).join(', ')}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <FaFileAlt className="text-3xl text-[#6272a4] mx-auto" />
-                  <p className="text-[#f8f8f2]">Clique para selecionar documentos</p>
-                  <p className="text-[#6272a4] text-xs">PDF, DOC, TXT ou MD</p>
-                </div>
-              )}
-            </label>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={closeDoc}
-              className="flex-1 px-4 py-2 bg-[#6272a4] text-[#f8f8f2] rounded-lg hover:bg-[#44475a] transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleDocSubmit}
-              disabled={selectedFiles.length === 0}
-              className="flex-1 px-4 py-2 bg-[#50fa7b] text-[#282a36] font-bold rounded-lg hover:bg-[#8be9fd] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Enviar
-            </button>
-          </div>
+          <p className="text-sm text-muted">Arquivos .txt, .md, .csv e .json têm o conteúdo lido (até 12 mil caracteres). Para PDF/DOCX, só o nome é enviado — cole trechos no chat.</p>
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-line p-6 text-center hover:border-purple/60">
+            <input type="file" multiple accept=".txt,.md,.markdown,.csv,.json,.pdf,.doc,.docx" className="sr-only" onChange={(e) => pickDocs(e.target.files)} />
+            <FaFileAlt className="text-3xl text-subtle" aria-hidden />
+            <span>Selecionar arquivos</span>
+          </label>
         </div>
       </Modal>
     </>

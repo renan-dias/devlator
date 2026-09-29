@@ -1,49 +1,44 @@
-import React, { useEffect, useState } from "react";
+"use client";
+import { useEffect, useState } from "react";
 
-const GREETINGS = [
-  `console.log("Olá DEV! Pronto para estimar?");`,
-  `function calcularProjeto() { return "Sucesso!"; }`,
-  `// TODO: Precificar meu próximo projeto`,
-  `const projeto = new Estimativa();`,
-  `if (dev.temProjeto) { usar(Devlator); }`,
-  `npm install devlator-estimativas`,
-  `git commit -m "Projeto precificado!"`,
-  `let valor = await calcularEstimativa();`,
+const LINES = [
+  `const preco = horas * valorHora;`,
+  `if (escopo.indefinido) cobrarPorSprint();`,
+  `git commit -m "orçamento enviado"`,
+  `await devlator.compararComMercado();`,
+  `// TODO: parar de cobrar barato`,
+  `npm run proposta -- --com-impostos`,
 ];
 
 export default function TypingGreeting() {
   const [index, setIndex] = useState(0);
-  const [displayed, setDisplayed] = useState("");
-  const [typing, setTyping] = useState(true);
+  const [text, setText] = useState("");
 
   useEffect(() => {
-    // Randomizar a primeira saudação
-    setIndex(Math.floor(Math.random() * GREETINGS.length));
-  }, []);
-
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    if (typing && displayed.length < GREETINGS[index].length) {
-      timeout = setTimeout(() => {
-        setDisplayed(GREETINGS[index].slice(0, displayed.length + 1));
-      }, 40);
-    } else if (typing && displayed.length === GREETINGS[index].length) {
-      setTyping(false);
-      timeout = setTimeout(() => {
-        setTyping(true);
-        setDisplayed("");
-        setIndex((prev) => (prev + 1) % GREETINGS.length);
-      }, 2500);
+    const line = LINES[index];
+    if (text.length < line.length) {
+      const t = setTimeout(() => setText(line.slice(0, text.length + 1)), 45);
+      return () => clearTimeout(t);
     }
-    return () => clearTimeout(timeout);
-  }, [displayed, typing, index]);
+    const t = setTimeout(() => {
+      setText("");
+      setIndex((i) => (i + 1) % LINES.length);
+    }, 2200);
+    return () => clearTimeout(t);
+  }, [text, index]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <pre className="text-sm md:text-lg font-mono bg-[#282a36] rounded-xl px-4 md:px-6 py-3 md:py-4 shadow-lg border border-[#44475a] transition-all animate-fade-in overflow-x-auto">
-        <span className="text-[#50fa7b]">{displayed}</span>
-        <span className="inline-block w-2 animate-blink text-[#f8f8f2]">|</span>
-      </pre>
+    <div className="card inline-flex max-w-full items-center gap-3 overflow-hidden px-4 py-2.5 font-mono text-xs sm:text-sm" aria-hidden>
+      <span className="flex gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-red/80" />
+        <span className="h-2.5 w-2.5 rounded-full bg-yellow/80" />
+        <span className="h-2.5 w-2.5 rounded-full bg-green/80" />
+      </span>
+      <span className="truncate text-green">
+        <span className="text-subtle">$ </span>
+        {text}
+        <span className="animate-blink text-fg">▍</span>
+      </span>
     </div>
   );
 }

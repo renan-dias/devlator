@@ -1,81 +1,63 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Menu from "@/components/Menu";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import PageTransition from "@/components/PageTransition";
+import { SITE } from "@/lib/site";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Devlator - Calculadora Profissional para DEVs",
-  description: "Calculadora inteligente com IA para precificação de projetos de desenvolvimento. Chatbot especializado, análise de mercado e relatórios profissionais.",
-  keywords: ["calculadora", "precificação", "desenvolvimento", "freelancer", "projetos", "orçamento", "devs"],
-  authors: [{ name: "Devlator Team" }],
-  creator: "Devlator",
-  publisher: "Devlator",
-  robots: "index, follow",
-  viewport: "width=device-width, initial-scale=1",
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/logo.png", sizes: "32x32", type: "image/png" }
-    ],
-    apple: [
-      { url: "/logo.png", sizes: "180x180", type: "image/png" }
-    ]
-  },
+  metadataBase: new URL(SITE.url),
+  title: { default: SITE.title, template: "%s · Devlator" },
+  description: SITE.description,
+  applicationName: SITE.name,
+  keywords: SITE.keywords,
+  authors: [{ name: SITE.author, url: SITE.github }],
+  creator: SITE.author,
+  category: "technology",
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   openGraph: {
-    title: "Devlator - Calculadora Profissional para DEVs",
-    description: "Calculadora inteligente com IA para precificação de projetos de desenvolvimento",
-    url: "https://devlator.com",
-    siteName: "Devlator",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "Devlator - Calculadora para DEVs"
-      }
-    ],
-    locale: "pt_BR",
-    type: "website"
+    type: "website",
+    locale: SITE.locale,
+    url: "/",
+    siteName: SITE.name,
+    title: SITE.title,
+    description: SITE.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Devlator - Calculadora Profissional para DEVs",
-    description: "Calculadora inteligente com IA para precificação de projetos",
-    images: ["/logo.png"]
-  }
+    title: SITE.title,
+    description: SITE.description,
+  },
+  formatDetection: { telephone: false },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#15161e",
+  colorScheme: "dark",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-br">
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/logo.png" type="image/png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/logo.png" sizes="180x180" />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#282a36] text-[#f8f8f2] font-mono`}>
-        <Menu />
-        <PageTransition>
-          <main className="min-h-[calc(100vh-120px)] flex flex-col items-center justify-center px-2 py-4 md:py-8">
-            {children}
-          </main>
-        </PageTransition>
+    <html lang="pt-BR">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <a
+          href="#conteudo"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-purple focus:px-4 focus:py-2 focus:text-bg"
+        >
+          Pular para o conteúdo
+        </a>
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-aurora" />
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-grid" />
+        <Header />
+        <main id="conteudo" className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 md:pt-10">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>

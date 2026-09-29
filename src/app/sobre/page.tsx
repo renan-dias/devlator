@@ -1,101 +1,131 @@
-'use client';
-import { FaCode, FaRocket, FaBrain } from "react-icons/fa";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { MARKET_SOURCES, MARKET_UPDATED_AT, PROJECT_TYPES, REGIONS, SENIORITY, formatBRL } from "@/lib/market-data";
+
+export const metadata: Metadata = {
+  title: "Metodologia e fontes",
+  description:
+    "Como o Devlator calcula o preço de um projeto de software: horas por tipo de projeto, valor-hora por senioridade e região, contingência, urgência, impostos e fontes de mercado.",
+  alternates: { canonical: "/sobre" },
+  openGraph: { url: "/sobre" },
+};
+
+const STEPS = [
+  ["Horas-base", "Cada tipo de projeto tem um volume típico de horas para um escopo padrão feito por um dev pleno (ex.: landing page 16h, aplicação web 220h). O tamanho do escopo escala esse número."],
+  ["Funcionalidades", "Login, integrações, banco de dados, pagamentos, CMS e infraestrutura somam horas fixas. Design, complexidade, testes, segurança e experiência somam percentuais — uma única vez, sem multiplicar fatores em cadeia."],
+  ["Equipe", "Mais pessoas reduzem o prazo, mas adicionam horas de coordenação (8% a 22%)."],
+  ["Valor-hora", "Usamos o seu valor-hora ou a média de mercado da sua senioridade, ajustada pela região dos seus clientes."],
+  ["Risco e urgência", "Uma reserva de contingência (5% a 35%) cobre escopo indefinido. Prazos apertados recebem adicional de urgência (10% a 50%)."],
+  ["Impostos", "O preço final é bruto: o valor líquido é dividido por (1 − alíquota), para que você receba o que planejou depois da nota fiscal."],
+  ["Comparação", "O resultado é posicionado nas faixas públicas de preço do tipo de projeto e o seu valor-hora nas faixas do seu perfil."],
+];
 
 export default function SobrePage() {
   return (
-    <section className="w-full max-w-3xl mx-auto p-8 bg-[#44475a]/40 rounded-2xl shadow-xl mt-8">
-      <h1 className="text-3xl font-bold text-[#bd93f9] mb-6 flex items-center gap-3">
-        <FaCode />
-        Sobre o Devlator
-      </h1>
-      
-      <div className="space-y-6 text-[#f8f8f2]">
-        <div className="bg-[#282a36]/50 p-6 rounded-xl">
-          <h2 className="text-xl font-bold text-[#50fa7b] mb-3 flex items-center gap-2">
-            <FaRocket />
-            O que é o Devlator?
-          </h2>
-          <p className="leading-relaxed">
-            O <span className="text-[#50fa7b] font-semibold">Devlator</span> é uma calculadora inteligente para desenvolvedores que precisam estimar quanto cobrar por seus projetos. 
-            Com design inspirado em IDEs como VS Code e tema Dracula, oferece uma experiência familiar para devs.
+    <article className="mx-auto max-w-3xl">
+      <p className="eyebrow">Metodologia</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Como o Devlator calcula</h1>
+      <p className="mt-4 text-lg text-muted">
+        O preço é resultado de um modelo aberto de <strong className="text-fg">horas × valor-hora</strong>, ajustado por risco, urgência e impostos. A IA
+        não define o número — ela só comenta, aponta riscos e responde dúvidas.
+      </p>
+
+      <ol className="mt-10 space-y-4">
+        {STEPS.map(([title, text], i) => (
+          <li key={title} className="card flex gap-4 p-5">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-purple/15 font-mono text-sm text-purple">{i + 1}</span>
+            <div>
+              <h2 className="font-semibold">{title}</h2>
+              <p className="mt-1 text-sm text-muted">{text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="card mt-8 p-5 font-mono text-sm text-muted">
+        preço = (horas-base × escopo + horas fixas) × (1 + ajustes) × (1 + coordenação) × valor-hora × (1 + urgência) × (1 + contingência) ÷ (1 − impostos)
+      </div>
+
+      <h2 className="mt-12 text-2xl font-bold">Parâmetros atuais</h2>
+      <p className="mt-2 text-sm text-subtle">Revisados em {MARKET_UPDATED_AT}.</p>
+
+      <div className="card mt-4 overflow-x-auto">
+        <table className="w-full min-w-[480px] text-sm">
+          <caption className="sr-only">Horas-base e faixas de mercado por tipo de projeto</caption>
+          <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-subtle">
+            <tr>
+              <th scope="col" className="px-4 py-3 font-medium">Tipo</th>
+              <th scope="col" className="px-4 py-3 font-medium">Horas-base</th>
+              <th scope="col" className="px-4 py-3 font-medium">Faixa de mercado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.values(PROJECT_TYPES).map((t) => (
+              <tr key={t.label} className="border-b border-line/60 last:border-0">
+                <th scope="row" className="px-4 py-3 text-left font-medium">{t.label}</th>
+                <td className="px-4 py-3 font-mono">{t.baseHours}h</td>
+                <td className="px-4 py-3 font-mono text-muted">{formatBRL(t.market.min)} – {formatBRL(t.market.max)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="card p-5">
+          <h3 className="font-semibold">Valor-hora por senioridade</h3>
+          <ul className="mt-3 space-y-1.5 text-sm">
+            {Object.values(SENIORITY).map((s) => (
+              <li key={s.label} className="flex justify-between gap-2">
+                <span className="text-muted">{s.label}</span>
+                <span className="font-mono">{formatBRL(s.rate.min)}–{formatBRL(s.rate.max)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-subtle">
+            Derivado das médias CLT (júnior {formatBRL(SENIORITY.junior.cltMonthly!)}, pleno {formatBRL(SENIORITY.pleno.cltMonthly!)}, sênior{" "}
+            {formatBRL(SENIORITY.senior.cltMonthly!)}) × 1,4 (PJ) × 1,6 (horas não faturáveis), cruzado com faixas publicadas.
           </p>
         </div>
-
-        <div className="bg-[#282a36]/50 p-6 rounded-xl">
-          <h2 className="text-xl font-bold text-[#bd93f9] mb-3 flex items-center gap-2">
-            <FaBrain />
-            Como funciona?
-          </h2>
-          <ul className="space-y-2 text-[#f8f8f2]">
-            <li className="flex items-center gap-2">
-              <span className="text-[#50fa7b]">→</span>
-              Quiz dinâmico que adapta perguntas baseado nas suas respostas
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[#50fa7b]">→</span>
-              Perguntas sobre tecnologia, infraestrutura e ambiente de produção
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[#50fa7b]">→</span>
-              IA analisa complexidade e gera estimativas com validação de mercado
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[#50fa7b]">→</span>
-              Exportação de contrato de serviço com todos os detalhes
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[#50fa7b]">→</span>
-              Chat com Devinho para esclarecer dúvidas específicas
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[#50fa7b]">→</span>
-              Histórico salvo localmente para acompanhar seus projetos
-            </li>
+        <div className="card p-5">
+          <h3 className="font-semibold">Ajuste regional</h3>
+          <ul className="mt-3 space-y-1.5 text-sm">
+            {Object.values(REGIONS).map((r) => (
+              <li key={r.label} className="flex justify-between gap-2">
+                <span className="text-muted">{r.label}</span>
+                <span className="font-mono">{r.factor}×</span>
+              </li>
+            ))}
           </ul>
         </div>
-
-        <div className="bg-[#282a36]/50 p-6 rounded-xl">
-          <h2 className="text-xl font-bold text-[#8be9fd] mb-3">Funcionalidades</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-sm font-bold text-[#f1fa8c] mb-2">Calculadora IA</h3>
-              <ul className="text-sm space-y-1">
-                <li>• Quiz dinâmico e adaptativo</li>
-                <li>• Perguntas condicionais</li>
-                <li>• Análise de complexidade técnica</li>
-                <li>• Estimativa de infraestrutura</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-[#f1fa8c] mb-2">Análise Avançada</h3>
-              <ul className="text-sm space-y-1">
-                <li>• Validação de preço de mercado</li>
-                <li>• Sugestões de otimização</li>
-                <li>• Justificativa técnica detalhada</li>
-                <li>• Exportação de contrato</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#282a36]/50 p-6 rounded-xl">
-          <h2 className="text-xl font-bold text-[#ffb86c] mb-3">Objetivo</h2>
-          <p className="leading-relaxed">
-            Ajudar desenvolvedores brasileiros a precificar seus projetos de forma justa e profissional, 
-            considerando a realidade do mercado nacional e fornecendo ferramentas para negociação transparente.
-            A ferramenta busca valorizar o trabalho do desenvolvedor e educar sobre precificação adequada.
-          </p>
-        </div>
-
-        <div className="text-center pt-4 border-t border-[#44475a]">
-          <p className="text-[#f1fa8c] text-sm">
-            Desenvolvido por <span className="font-semibold">Renan Dias</span> • Projeto educacional
-          </p>
-          <p className="text-[#6272a4] text-xs mt-1">
-            Tem um projeto e quer estimar quanto cobrar? A Devlator está aqui para te ajudar!
-          </p>
-        </div>
       </div>
-    </section>
+
+      <h2 className="mt-12 text-2xl font-bold">Fontes</h2>
+      <ul className="mt-4 space-y-2 text-sm">
+        {MARKET_SOURCES.map((s) => (
+          <li key={s.url}>
+            <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-cyan underline-offset-2 hover:underline">
+              {s.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div className="card mt-12 p-6">
+        <h2 className="font-semibold">Limitações</h2>
+        <p className="mt-2 text-sm text-muted">
+          Nenhuma calculadora substitui a análise de requisitos. Use o resultado como ponto de partida para a proposta, ajuste pelo seu histórico
+          real de horas e revise os parâmetros quando o mercado mudar. Encontrou um número desatualizado?{" "}
+          <a href="https://github.com/renan-dias/devlator/issues" target="_blank" rel="noopener noreferrer" className="text-purple hover:underline">
+            Abra uma issue
+          </a>
+          .
+        </p>
+      </div>
+
+      <div className="mt-10 flex justify-center">
+        <Link href="/calculadora" className="btn-primary">Fazer uma estimativa</Link>
+      </div>
+    </article>
   );
 }
