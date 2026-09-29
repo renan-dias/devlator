@@ -6,6 +6,9 @@ import ProfileStep from "./ProfileStep";
 import QuestionStep from "./QuestionStep";
 import CalculatingStep from "./CalculatingStep";
 import ResultView from "./ResultView";
+import { fetchUsdBrl } from "./AiCostsSection";
+import { defaultAiSetup, type AiSetup } from "@/lib/ai-tools";
+import { defaultHostingSelection, type HostingSelection } from "@/lib/hosting-data";
 import { DEFAULT_PROFILE, estimate, type Profile } from "@/lib/estimator";
 import { REGIONS, SENIORITY, formatBRL } from "@/lib/market-data";
 import { getApplicableQuestions, type Answers } from "@/lib/questions";
@@ -32,12 +35,12 @@ interface Draft {
 
 const MIN_CALC_MS = 1900;
 
-async function fetchAnalysis(answers: Answers, profile: Profile): Promise<AiAnalysis | undefined> {
+async function fetchAnalysis(answers: Answers, profile: Profile, ai: AiSetup | null): Promise<AiAnalysis | undefined> {
   try {
     const res = await fetch("/api/analysis", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers, profile }),
+      body: JSON.stringify({ answers, profile, ai }),
       signal: AbortSignal.timeout(25000),
     });
     if (!res.ok) return undefined;
@@ -100,13 +103,26 @@ export default function Calculator() {
 
   const finish = async (finalAnswers: Answers) => {
     setStep("calculating");
-    const result = estimate(finalAnswers, profile);
     const started = Date.now();
-    const analysis = await fetchAnalysis(finalAnswers, profile);
+    const previous = editingId ? loadHistory().find((r) => r.id === editingId) : undefined;
+
+    // IA: mantém as ferramentas já ajustadas se a resposta não mudou; senão usa o perfil sugerido.
+    let ai: AiSetup | null = null;
+    if (previous?.ai && previous.answers.ia === finalAnswers.ia) {
+      ai = previous.ai;
+    } else if (finalAnswers.ia && finalAnswers.ia !== "nao") {
+      const fx = await fetchUsdBrl();
+      const people = estimate(finalAnswers, profile, null).timeline.people;
+      ai = defaultAiSetup(finalAnswers.ia, people, fx.rate, fx.date);
+    }
+    const result = estimate(finalAnswers, profile, ai);
+    const sameHosting = previous?.hosting && previous.answers.tipo === finalAnswers.tipo && previous.answers.hospedagem === finalAnswers.hospedagem;
+    const hosting = sameHosting ? previous!.hosting! : defaultHostingSelection(result.projectType, finalAnswers.hospedagem);
+
+    const analysis = await fetchAnalysis(finalAnswers, profile, ai);
     const wait = MIN_CALC_MS - (Date.now() - started);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 
-    const previous = editingId ? loadHistory().find((r) => r.id === editingId) : undefined;
     const next: EstimateRecord = {
       id: previous?.id ?? crypto.randomUUID(),
       createdAt: previous?.createdAt ?? Date.now(),
@@ -115,6 +131,8 @@ export default function Calculator() {
       profile,
       result,
       analysis,
+      ai,
+      hosting,
     };
     persistRecord(next);
     removeKey(STORAGE_KEYS.draft);
@@ -179,13 +197,23 @@ export default function Calculator() {
   const changeResultProfile = (p: Profile) => {
     if (!record) return;
     saveProfile(p);
-    persistRecord({ ...record, profile: p, result: estimate(record.answers, p) });
+    persistRecord({ ...record, profile: p, result: estimate(record.answers, p, record.ai) });
+  };
+
+  const changeAi = (ai: AiSetup) => {
+    if (!record) return;
+    persistRecord({ ...record, ai, result: estimate(record.answers, record.profile, ai) });
+  };
+
+  const changeHosting = (hosting: HostingSelection) => {
+    if (!record) return;
+    persistRecord({ ...record, hosting });
   };
 
   const refreshAnalysis = async () => {
     if (!record) return;
     setAnalysisLoading(true);
-    const analysis = await fetchAnalysis(record.answers, record.profile);
+    const analysis = await fetchAnalysis(record.answers, record.profile, record.ai ?? null);
     setAnalysisLoading(false);
     if (analysis) persistRecord({ ...record, analysis });
   };
@@ -228,6 +256,8 @@ export default function Calculator() {
         record={record}
         analysisLoading={analysisLoading}
         onProfileChange={changeResultProfile}
+        onAiChange={changeAi}
+        onHostingChange={changeHosting}
         onRename={(name) => persistRecord({ ...record, name })}
         onEditQuestion={editQuestion}
         onRefreshAnalysis={refreshAnalysis}

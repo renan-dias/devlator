@@ -1,5 +1,7 @@
 import type { Answers } from "./questions";
 import type { EstimateResult, Profile } from "./estimator";
+import type { AiSetup } from "./ai-tools";
+import type { HostingSelection } from "./hosting-data";
 
 /** Todas as chaves ficam só no navegador do usuário (localStorage). */
 export const STORAGE_KEYS = {
@@ -53,6 +55,9 @@ export interface EstimateRecord {
   profile: Profile;
   result: EstimateResult;
   analysis?: AiAnalysis;
+  /** Ferramentas de IA escolhidas (ausente em estimativas antigas). */
+  ai?: AiSetup | null;
+  hosting?: HostingSelection;
 }
 
 const MAX_HISTORY = 50;

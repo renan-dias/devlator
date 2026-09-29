@@ -11,6 +11,8 @@ Descubra quanto cobrar por um site, app, e-commerce, API ou sistema. O Devlator 
 - **Simulador "E se eu cobrar…"**: mude valor-hora, senioridade, região e impostos e veja o preço recalcular na hora.
 - **Prazo realista**: semanas calculadas pela equipe e dedicação, com alerta quando o prazo do cliente não fecha.
 - **Calculadora de valor-hora** (`/valor-hora`): a partir da renda desejada, custos, impostos, férias e 13º.
+- **Gastos com IA (vibecoding)**: Copilot, Cursor, Claude Code, ChatGPT/Codex, Lovable, Bolt, v0 e Replit, com o plano e o número de pessoas. Planos em dólar usam a cotação do dia (AwesomeAPI) + IOF de 3,5%; ChatGPT, Claude e Lovable já cobram em reais no Brasil. O dev escolhe repassar ao cliente ou absorver.
+- **Relatório de hospedagem** (no fim da estimativa, na proposta e em `/hospedagem`): Hostinger × Locaweb × HostGator, compartilhada e VPS, com custo real em 1 a 4 anos (ciclo pago adiantado + renovação pelo preço cheio).
 - **Proposta em PDF ou texto**, com escopo, fases, manutenção e condições de pagamento.
 - **Chat com IA (Devinho)**: recebe a estimativa como contexto e aceita imagem do design, site de referência, documentos e região.
 - **Tudo salvo localmente**: perfil, rascunho em andamento, histórico de estimativas (com comparação, exportação e importação) e conversas.
@@ -48,11 +50,13 @@ Acesse http://localhost:3000. Sem `GEMINI_API_KEY` a calculadora funciona normal
 ```
 src/
 ├── app/                 # rotas (App Router), APIs, sitemap, robots, OG image
-│   └── api/             # analysis, chat, location, webscrape
+│   └── api/             # analysis, cambio, chat, location, webscrape
 ├── components/
 │   └── calculator/      # passos da calculadora e tela de resultado
 └── lib/
     ├── market-data.ts   # faixas de mercado, valor-hora, regiões, fontes
+    ├── ai-tools.ts      # planos de ferramentas de IA, câmbio e IOF
+    ├── hosting-data.ts  # planos de hospedagem e cálculo de custo no período
     ├── questions.ts     # perguntas e o efeito de cada resposta
     ├── estimator.ts     # motor de cálculo
     ├── storage.ts       # persistência local

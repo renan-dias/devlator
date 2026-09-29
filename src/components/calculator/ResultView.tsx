@@ -15,6 +15,10 @@ import {
 } from "react-icons/fa";
 import MarketBar from "./MarketBar";
 import ExportModal from "./ExportModal";
+import AiCostsSection from "./AiCostsSection";
+import HostingReport from "@/components/HostingReport";
+import { defaultHostingSelection, type HostingSelection } from "@/lib/hosting-data";
+import type { AiSetup } from "@/lib/ai-tools";
 import { useModal } from "@/components/Modal";
 import { describeAnswers, type MarketPosition, type Profile } from "@/lib/estimator";
 import { RECURRING_COSTS, REGIONS, SENIORITY, formatBRL } from "@/lib/market-data";
@@ -25,6 +29,8 @@ interface Props {
   record: EstimateRecord;
   analysisLoading: boolean;
   onProfileChange: (profile: Profile) => void;
+  onAiChange: (ai: AiSetup) => void;
+  onHostingChange: (hosting: HostingSelection) => void;
   onRename: (name: string) => void;
   onEditQuestion: (questionId: string) => void;
   onRefreshAnalysis: () => void;
@@ -44,6 +50,8 @@ export default function ResultView({
   record,
   analysisLoading,
   onProfileChange,
+  onAiChange,
+  onHostingChange,
   onRename,
   onEditQuestion,
   onRefreshAnalysis,
@@ -57,7 +65,8 @@ export default function ResultView({
   const rateVerdict = VERDICT[r.rateComparison.position];
   const sliderMin = Math.max(20, Math.round((r.rate.market.min * 0.5) / 5) * 5);
   const sliderMax = Math.round((r.rate.market.max * 1.6) / 5) * 5;
-  const maxPhase = Math.max(...r.phases.map((p) => p.hours));
+  const maxPhase = Math.max(1, ...r.phases.map((p) => p.value));
+  const hosting = record.hosting ?? defaultHostingSelection(r.projectType, record.answers.hospedagem);
   const answerList = describeAnswers(record.answers);
 
   const copySummary = async () => {
@@ -143,9 +152,11 @@ export default function ResultView({
                 <p>+ funcionalidades: {r.factors.fixedHours}h</p>
                 <p>× ajustes de complexidade: {pct(r.factors.pct)}</p>
                 {r.factors.overhead > 0 && <p>× coordenação da equipe: {pct(r.factors.overhead)}</p>}
+                {r.ai && r.ai.productivity !== 0 && <p>× efeito da IA nas horas: {pct(-r.ai.productivity)}</p>}
                 <p className="text-fg">= {r.hours.likely}h × {formatBRL(r.rate.value)}/h</p>
                 {r.factors.urgency > 0 && <p>× urgência: {pct(r.factors.urgency)}</p>}
                 <p>× contingência de escopo: {pct(r.factors.contingency)}</p>
+                {r.ai?.passThrough && r.ai.cost.total > 0 && <p>+ ferramentas de IA: {formatBRL(r.ai.cost.total)}</p>}
                 <p>÷ (1 − impostos {Math.round(r.factors.taxRate * 100)}%)</p>
                 <p className="text-green">= {formatBRL(r.price.recommended)}</p>
               </div>
@@ -268,11 +279,14 @@ export default function ResultView({
                 <div className="flex items-baseline justify-between gap-2 text-sm">
                   <span>{p.label}</span>
                   <span className="font-mono text-muted">
-                    {p.hours}h · <span className="text-fg">{formatBRL(p.value)}</span>
+                    {p.hours > 0 && `${p.hours}h · `}<span className="text-fg">{formatBRL(p.value)}</span>
                   </span>
                 </div>
                 <div className="mt-1.5 h-2 rounded-full bg-panel-2">
-                  <div className="h-full rounded-full bg-gradient-to-r from-purple to-cyan" style={{ width: `${(p.hours / maxPhase) * 100}%` }} />
+                  <div
+                    className={`h-full rounded-full ${p.id === "ai" ? "bg-gradient-to-r from-pink to-orange" : "bg-gradient-to-r from-purple to-cyan"}`}
+                    style={{ width: `${(p.value / maxPhase) * 100}%` }}
+                  />
                 </div>
               </li>
             ))}
@@ -292,7 +306,10 @@ export default function ResultView({
               Sem manutenção contratada. Um plano de 8h/mês sairia por ~{formatBRL(Math.round((8 * r.rate.value) / (1 - r.factors.taxRate) / 10) * 10)}/mês.
             </p>
           )}
-          <p className="mt-5 text-sm font-medium">Custos de terceiros (repassar ao cliente)</p>
+          <p className="mt-5 text-sm font-medium">
+            Custos de terceiros (repassar ao cliente) ·{" "}
+            <a href="#hospedagem" className="font-normal text-purple hover:underline">comparar hospedagens</a>
+          </p>
           <ul className="mt-2 divide-y divide-line/60 text-sm">
             {RECURRING_COSTS.map((c) => (
               <li key={c.label} className="flex justify-between gap-3 py-2">
@@ -303,6 +320,8 @@ export default function ResultView({
           </ul>
         </section>
       </div>
+
+      <AiCostsSection setup={record.ai ?? null} result={r} onChange={onAiChange} />
 
       {/* Análise */}
       <section className="card p-6" aria-labelledby="analise" aria-busy={analysisLoading}>
@@ -383,6 +402,8 @@ export default function ResultView({
           ))}
         </ul>
       </section>
+
+      <HostingReport selection={hosting} onChange={onHostingChange} projectType={r.projectType} />
 
       <div className="no-print flex flex-col gap-3 sm:flex-row">
         <button onClick={onRestart} className="btn-secondary">

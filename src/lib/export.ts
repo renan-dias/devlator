@@ -1,6 +1,37 @@
 import { describeAnswers } from "./estimator";
 import { MARKET_UPDATED_AT, formatBRL } from "./market-data";
 import type { EstimateRecord } from "./storage";
+import { AI_PRICES_UPDATED_AT } from "./ai-tools";
+import { HOSTING_UPDATED_AT, PROVIDERS, compareHosting, defaultHostingSelection } from "./hosting-data";
+
+const brl2 = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }).format(v);
+
+function aiLines(record: EstimateRecord): string[] {
+  const ai = record.result.ai;
+  if (!ai || ai.cost.lines.length === 0) return [];
+  return [
+    ...ai.cost.lines.map((l) => `${l.label}${l.seats > 1 ? ` (${l.seats} pessoas)` : ""}: ${brl2(l.brlMonthly)}/mês`),
+    `Total: ${brl2(ai.cost.brlMonthly)}/mês × ${ai.cost.months} ${ai.cost.months === 1 ? "mês" : "meses"} = ${brl2(ai.cost.total)} (${
+      ai.passThrough ? "incluso no investimento" : "custo do desenvolvedor, não cobrado"
+    })`,
+  ];
+}
+
+function hostingSummary(record: EstimateRecord) {
+  const sel = record.hosting ?? defaultHostingSelection(record.result.projectType, record.answers.hospedagem);
+  const title = `${sel.category === "vps" ? "Servidor VPS" : "Hospedagem de sites"} — custo em ${sel.horizonYears} ${sel.horizonYears === 1 ? "ano" : "anos"}`;
+  const tiers = compareHosting(sel.category, sel.horizonYears).map((t) => ({
+    label: t.label,
+    rows: t.quotes.map((q) => ({
+      name: `${PROVIDERS[q.plan.provider].name} ${q.plan.name}`,
+      detail: `${brl2(q.offer.promo)}/mês por ${q.offer.cycleMonths} meses, renova ${brl2(q.offer.renewal)}/mês`,
+      total: brl2(q.total),
+      best: q === t.cheapest,
+    })),
+  }));
+  return { title, tiers };
+}
 
 export interface ProposalInfo {
   projectName: string;
@@ -46,11 +77,20 @@ export function proposalText(record: EstimateRecord, info: ProposalInfo): string
     ...describeAnswers(record.answers).map((a) => `- ${a.question} ${a.answer}`),
     "",
     "FASES",
-    ...r.phases.map((p) => `- ${p.label}: ${p.hours}h · ${formatBRL(p.value)}`),
+    ...r.phases.map((p) => `- ${p.label}: ${p.hours > 0 ? `${p.hours}h · ` : ""}${formatBRL(p.value)}`),
   ];
   if (r.maintenance) {
     lines.push("", `MANUTENÇÃO MENSAL (opcional): ${formatBRL(r.maintenance.monthly)}/mês · ${r.maintenance.hours}h/mês`);
   }
+  const ai = aiLines(record);
+  if (ai.length) lines.push("", "FERRAMENTAS DE IA", ...ai.map((l) => `- ${l}`));
+  const hosting = hostingSummary(record);
+  lines.push("", `HOSPEDAGEM (${hosting.title})`);
+  hosting.tiers.forEach((t) => {
+    lines.push(t.label);
+    t.rows.forEach((r) => lines.push(`- ${r.name}: ${r.total}${r.best ? " (mais barato)" : ""} — ${r.detail}`));
+  });
+  lines.push(`Preços de ${HOSTING_UPDATED_AT}; promoções exigem pagamento antecipado e renovam pelo preço cheio.`);
   if (analysis?.risks.length) {
     lines.push("", "PREMISSAS E RISCOS", ...analysis.risks.map((x) => `- ${x}`));
   }
@@ -61,6 +101,7 @@ export function proposalText(record: EstimateRecord, info: ProposalInfo): string
     "- Alterações de escopo serão orçadas à parte com base no valor-hora acima.",
     "- Custos de terceiros (domínio, hospedagem, APIs pagas, lojas de apps) não inclusos.",
     `- Proposta válida por 15 dias. Valores incluem impostos (${Math.round(r.factors.taxRate * 100)}%).`,
+    ...(r.ai?.passThrough ? ["- Assinaturas de ferramentas de IA usadas no projeto estão inclusas no investimento."] : []),
     "",
     `Gerado com Devlator (referências de mercado: ${MARKET_UPDATED_AT}).`,
   );
@@ -148,12 +189,19 @@ export async function exportProposalPDF(record: EstimateRecord, info: ProposalIn
   describeAnswers(record.answers).forEach((a) => row(a.question, a.answer));
 
   heading("Fases e investimento");
-  r.phases.forEach((p) => row(`${p.label} (${p.hours}h)`, formatBRL(p.value)));
+  r.phases.forEach((p) => row(p.hours > 0 ? `${p.label} (${p.hours}h)` : p.label, formatBRL(p.value)));
   row("Total", formatBRL(r.price.recommended));
 
   if (r.maintenance) {
     heading("Manutenção mensal (opcional)");
     paragraph(`${r.maintenance.hours} horas por mês para atualizações, correções e pequenas melhorias: ${formatBRL(r.maintenance.monthly)}/mês.`);
+  }
+
+  const ai = aiLines(record);
+  if (ai.length) {
+    heading("Ferramentas de IA");
+    ai.forEach((l) => paragraph(`- ${l}`));
+    paragraph(`Preços de ${AI_PRICES_UPDATED_AT}. Planos em dólar convertidos com câmbio do dia e IOF.`, 8);
   }
 
   if (analysis?.summary) {
@@ -164,6 +212,18 @@ export async function exportProposalPDF(record: EstimateRecord, info: ProposalIn
     heading("Premissas e riscos");
     analysis.risks.forEach((x) => paragraph(`- ${x}`));
   }
+
+  const hosting = hostingSummary(record);
+  heading(`Hospedagem: ${hosting.title}`);
+  hosting.tiers.forEach((t) => {
+    ensure(8);
+    pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(60, 60, 75);
+    pdf.text(latin1(t.label), M, y);
+    y += 5;
+    t.rows.forEach((r) => row(`${r.name}${r.best ? " (mais barato)" : ""} - ${r.detail}`, r.total));
+    y += 1;
+  });
+  paragraph(`Preços coletados em ${HOSTING_UPDATED_AT} nos sites oficiais. Promoções exigem pagamento antecipado e renovam pelo preço cheio.`, 8);
 
   heading("Condições");
   [

@@ -10,6 +10,7 @@ import {
   formatBRL,
 } from "./market-data";
 import { findOption, getApplicableQuestions, type Answers } from "./questions";
+import { computeAiCost, defaultAiSetup, type AiCost, type AiSetup } from "./ai-tools";
 
 export interface Profile {
   seniority: Seniority;
@@ -61,6 +62,16 @@ export interface EstimateResult {
     feasible: boolean;
   };
   maintenance: { hours: number; monthly: number } | null;
+  /** Ferramentas de IA (null quando o dev não usa). */
+  ai: {
+    cost: AiCost;
+    passThrough: boolean;
+    productivity: number;
+    /** Horas economizadas (negativo = horas a mais). */
+    hoursSaved: number;
+    /** Valor acrescentado ao preço (já com impostos) quando repassado. */
+    priceAddition: number;
+  } | null;
   market: {
     range: PriceRange;
     note: string;
@@ -107,7 +118,11 @@ const TEST_SHARE: Record<string, number> = {
   completos: 0.16,
 };
 
-export function estimate(answers: Answers, profile: Profile): EstimateResult {
+/**
+ * @param aiSetup Ferramentas de IA escolhidas. Se omitido, usa o perfil sugerido
+ * pela resposta da pergunta "ia" (ou nenhum, se o dev não usa IA).
+ */
+export function estimate(answers: Answers, profile: Profile, aiSetup?: AiSetup | null): EstimateResult {
   const projectType = (answers.tipo as ProjectType) in PROJECT_TYPES ? (answers.tipo as ProjectType) : "webapp";
   const typeInfo = PROJECT_TYPES[projectType];
 
@@ -139,7 +154,11 @@ export function estimate(answers: Answers, profile: Profile): EstimateResult {
 
   pct = clamp(pct, -0.3, 2.5);
   const baseHours = typeInfo.baseHours * scope;
-  const likely = Math.max(4, Math.round((baseHours + fixedHours) * (1 + pct) * (1 + overhead)));
+  const ai = aiSetup === undefined ? defaultAiSetup(answers.ia, people) : aiSetup;
+  const aiEnabled = !!ai?.enabled;
+  const productivity = aiEnabled ? clamp(ai!.productivity, -0.3, 0.5) : 0;
+  const hoursBeforeAi = (baseHours + fixedHours) * (1 + pct) * (1 + overhead);
+  const likely = Math.max(4, Math.round(hoursBeforeAi * (1 - productivity)));
   const hours = {
     min: Math.round(likely * 0.85),
     likely,
@@ -153,10 +172,18 @@ export function estimate(answers: Answers, profile: Profile): EstimateResult {
   const gross = (h: number, withContingency: boolean) =>
     (h * rate * (1 + urgency) * (withContingency ? 1 + contingency : 1)) / (1 - taxRate);
 
+  const weeks = Math.max(0.5, Math.ceil((hours.likely / (people * weeklyHours * 0.85)) * 2) / 2);
+  const feasible = deadlineWeeks === null || weeks <= deadlineWeeks;
+
+  // Ferramentas de IA: custo pelo período do projeto; se repassado, entra no preço com impostos.
+  const aiCost = aiEnabled ? computeAiCost(ai!, weeks) : null;
+  const aiAddition = aiCost && ai!.passThrough ? aiCost.total / (1 - taxRate) : 0;
+
+  const labor = roundPrice(gross(hours.likely, true));
   const price = {
-    min: roundPrice(gross(hours.min, false)),
-    recommended: roundPrice(gross(hours.likely, true)),
-    max: roundPrice(gross(hours.max, false)),
+    min: roundPrice(gross(hours.min, false) + aiAddition),
+    recommended: roundPrice(labor + aiAddition),
+    max: roundPrice(gross(hours.max, false) + aiAddition),
   };
 
   // Distribuição por fase: pesos relativos normalizados.
@@ -173,14 +200,14 @@ export function estimate(answers: Answers, profile: Profile): EstimateResult {
     id,
     label,
     hours: Math.round((hours.likely * w) / totalWeight),
-    value: roundPrice((price.recommended * w) / totalWeight),
+    value: roundPrice((labor * w) / totalWeight),
   }));
+  if (aiAddition > 0) {
+    phases.push({ id: "ai", label: "Ferramentas de IA (repasse)", hours: 0, value: roundPrice(aiAddition) });
+  }
   // Arredondamentos por fase não podem fazer a soma divergir do total.
   const dev = phases.find((p) => p.id === "dev")!;
   dev.value += price.recommended - phases.reduce((sum, p) => sum + p.value, 0);
-
-  const weeks = Math.max(0.5, Math.ceil((hours.likely / (people * weeklyHours * 0.85)) * 2) / 2);
-  const feasible = deadlineWeeks === null || weeks <= deadlineWeeks;
 
   const maintenance =
     maintenanceHours > 0
@@ -198,6 +225,15 @@ export function estimate(answers: Answers, profile: Profile): EstimateResult {
     phases,
     timeline: { weeks, people, weeklyHours, deadlineWeeks, feasible },
     maintenance,
+    ai: aiCost
+      ? {
+          cost: aiCost,
+          passThrough: ai!.passThrough,
+          productivity,
+          hoursSaved: Math.round(hoursBeforeAi - hours.likely),
+          priceAddition: roundPrice(aiAddition),
+        }
+      : null,
     market: {
       range: marketRange,
       note: typeInfo.marketNote,
@@ -256,6 +292,16 @@ export function buildInsights(r: EstimateResult, answers: Answers, profile: Prof
   }
   if (answers.manutencao === "nao" && r.hours.likely > 80) {
     tips.push("Ofereça um plano de manutenção mensal: gera receita recorrente e evita chamados avulsos sem cobrança.");
+  }
+  if (r.ai && !r.ai.passThrough && r.ai.cost.total > 0) {
+    tips.push(
+      `Você vai absorver ${formatBRL(r.ai.cost.total)} em ferramentas de IA. Se forem usadas só neste projeto, considere repassar esse custo ao cliente.`,
+    );
+  }
+  if (r.ai && r.ai.productivity >= 0.3) {
+    tips.push(
+      "Ganho de produtividade com IA acima de 30% é otimista: num estudo controlado (METR, 2025) devs experientes ficaram 19% mais lentos. Use números do seu histórico.",
+    );
   }
   if (r.factors.taxRate === 0) {
     tips.push("Você não incluiu impostos. Emitindo nota pelo Simples Nacional, a alíquota inicial para software é ~6%.");

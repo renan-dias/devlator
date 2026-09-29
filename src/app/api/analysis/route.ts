@@ -4,6 +4,7 @@ import { estimate, type Profile } from "@/lib/estimator";
 import { estimateContextText, marketReferenceText } from "@/lib/prompt-context";
 import type { Answers } from "@/lib/questions";
 import type { AiAnalysis } from "@/lib/storage";
+import type { AiSetup } from "@/lib/ai-tools";
 
 /**
  * Recebe respostas + perfil, recalcula a estimativa no servidor (não confiamos no
@@ -11,7 +12,7 @@ import type { AiAnalysis } from "@/lib/storage";
  * sempre determinístico — a IA só comenta, sugere e aponta riscos.
  */
 export async function POST(request: NextRequest) {
-  let body: { answers?: Answers; profile?: Profile };
+  let body: { answers?: Answers; profile?: Profile; ai?: AiSetup | null };
   try {
     body = await request.json();
   } catch {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Respostas incompletas" }, { status: 400 });
   }
 
-  const result = estimate(body.answers, body.profile);
+  const result = estimate(body.answers, body.profile, body.ai);
   const offline: AiAnalysis = {
     source: "offline",
     summary: `Estimativa baseada em ${result.hours.likely}h a ${result.rate.value} R$/h, com ${Math.round(result.factors.contingency * 100)}% de contingência e comparada às faixas públicas de mercado.`,

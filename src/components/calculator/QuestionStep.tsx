@@ -69,8 +69,8 @@ export default function QuestionStep({ question, index, total, selected, onAnswe
   // Atalhos: 1–9 escolhem a opção, ← volta.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("input, textarea, select") || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target;
+      if ((target instanceof Element && target.closest("input, textarea, select")) || e.metaKey || e.ctrlKey || e.altKey) return;
       const n = Number(e.key);
       if (n >= 1 && n <= question.options.length) {
         e.preventDefault();
